@@ -11,6 +11,8 @@ class ErrorPanelView extends ContinuumView
     @$el.empty()
     @render()
 
+    @listenTo(@model, 'change', @changed)
+
   render: () ->
     if @mget("visible")
        @$el.show() # TODO animate this
@@ -19,6 +21,9 @@ class ErrorPanelView extends ContinuumView
     @$el.html("<h2>Error in application</h2><pre></pre>")
     @$el.children("pre").text(@mget("error"))
     return @
+
+  changed: () ->
+    @render()
 
 class ErrorPanel extends HasProperties
   type: "ErrorPanel"

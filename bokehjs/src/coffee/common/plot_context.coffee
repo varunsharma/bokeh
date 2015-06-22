@@ -11,6 +11,7 @@ class PlotContextView extends ContinuumView
     @child_models = []
     @develop_shell_view = null
     super(options)
+    @$el.addClass("bk-plot-context")
     @render()
 
   delegateEvents: () ->
@@ -54,17 +55,15 @@ class PlotContextView extends ContinuumView
     shell = @mget("develop_shell")
 
     if @develop_shell_view?
-        # note that this codepath triggers if shell is null, too,
-        # in order to clean up the view when the model is gone
+        @develop_shell_view.$el.detach()
         if @develop_shell_view.model != shell
-            @develop_shell_view.detach()
             @develop_shell_view = null
 
     if shell?
         if not @develop_shell_view?
             @develop_shell_view = new DevelopShell.View({ model : shell })
-            @develop_shell_view.render()
-            @$el.append(@develop_shell_view.el)
+        @develop_shell_view.render()
+        @$el.append(@develop_shell_view.el)
         plot_root = @develop_shell_view.$el
 
     for modelref, index in @mget('children')

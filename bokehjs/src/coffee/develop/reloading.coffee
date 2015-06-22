@@ -12,16 +12,24 @@ class ReloadingView extends ContinuumView
     @$el.text("Reloading...")
     @render()
 
+    @listenTo(@model, 'change:visible', @changed)
+
   render: () ->
     if @mget("visible")
-       @$el.show()
+      @$el.show()
     else
-       @$el.hide()
+      @$el.hide()
     return @
+
+  changed: () ->
+    @render()
 
 class Reloading extends HasProperties
   type: "Reloading"
   default_view: ReloadingView
+
+  initialize: (options) ->
+    super(options)
 
   defaults: () ->
     return _.extend {}, super(), {

@@ -77,20 +77,27 @@ class LocalServer(Subcommand):
         from bokeh.plotting import show, push
         from bokeh.io import curdoc
 
+        curdoc().context.develop_shell.error_panel.visible = False
         curdoc().context.develop_shell.reloading.visible = True
         push()
 
         # TODO rather than clearing curdoc() we'd ideally
-        # save the old one and compute a diff to send
+        # save the old one and compute a diff to send.
+        # also we have a hack here to keep the old develop
+        # shell ID :-/
+        old_shell = curdoc().context.develop_shell
         curdoc().clear()
+        curdoc().context.develop_shell = old_shell
         try:
             print("Loading %s" % self.docpy)
             self.load(self.docpy)
         except Exception as e:
-            print("Failed: " + repr(e))
-            # TODO get the real errors
-            curdoc().context.develop_shell.error_panel.error = "Failed to reload document"
+            import traceback
+            formatted = traceback.format_exc(e)
+            print(formatted)
+            curdoc().context.develop_shell.error_panel.error = formatted
             curdoc().context.develop_shell.error_panel.visible = True
+
         curdoc().context.develop_shell.reloading.visible = False
         if open_browser:
             show(curdoc())

@@ -149,6 +149,10 @@
   padding-bottom: 10px;
 }
 
+.bk-plot-context {
+  min-height: 300px;
+}
+
 .bk-reloading {
   position: absolute;
   top: 0;
@@ -168,11 +172,17 @@
   bottom: 0;
   left: 0;
   width: 100%;
-  height: 200px;
+  min-height: 400px;
   z-index: 10001;
   background-color: rgb(205.0, 90, 90);
   padding: 20px;
 }
 
+.bk-error-panel pre {
+  overflow: auto;
+}
+
 .bk-develop-shell {
+  position: relative;
+  min-height: 400px; /* it doesn't get any size from absolute-positioned error panel */
 }
