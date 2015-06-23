@@ -7,9 +7,10 @@ import subprocess
 import sys
 
 from bokeh.settings import settings
-#import bokeh.server.start
+from bokeh.server import start
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
+from threading import Thread
 
 def die(message):
     print(message, file=sys.stderr)
@@ -46,23 +47,6 @@ class LocalServer(Subcommand):
         self.parser.add_argument('--port', metavar='PORT', type=int, help="Port to listen on", default=-1)
         self.port = 5006
         self.develop_mode = False
-
-    # TODO this is a hack for the time being;
-    # we want to be the server, not spawn it.
-    def start_background_server(self):
-        # TODO fix path to bokeh-server
-        self.bokehserver = subprocess.Popen(["./bokeh-server", "--port", str(self.port)])
-        time.sleep(2) # wait for it to start up. HACK
-
-        # TODO rather than publishing to separate server,
-        # make changes in the current server
-        from bokeh.plotting import output_server
-        output_server(self.appname)
-
-    def stop_background_server(self):
-        self.bokehserver.terminate()
-        time.sleep(1)
-        self.bokehserver.kill()
 
     def load(self, src_path):
         import ast
@@ -111,6 +95,31 @@ class LocalServer(Subcommand):
         if self.develop_mode and path == self.docpy:
             self.refresh(open_browser=False)
 
+    # this is a cut-and-paste from bokeh.server in order to
+    # start the main loop separately
+    def listen_simple_server(self, port=-1, args=None):
+        from bokeh.server.settings import settings as server_settings
+        from tornado.httpserver import HTTPServer
+        from bokeh.server.app import bokeh_app, app
+        from bokeh.server.configure import configure_flask, make_tornado_app, register_blueprint
+
+        configure_flask(config_argparse=args)
+        if server_settings.model_backend.get('start-redis', False):
+            start.start_redis()
+        register_blueprint()
+        start.tornado_app = make_tornado_app(flask_app=app)
+        start.server = HTTPServer(start.tornado_app)
+        if port < 0:
+            port = server_settings.port
+        start.server.listen(port, server_settings.ip)
+
+    def background_simple_server(self):
+        from tornado import ioloop
+        ioloop.IOLoop.instance().start()
+
+    def stop_simple_server(self):
+        start.stop()
+
     def func(self, args):
 
         self.directory = os.getcwd()
@@ -132,25 +141,38 @@ class LocalServer(Subcommand):
         else:
             print("Starting %s in production mode on port %d" % (self.appname, self.port))
 
-        self.start_background_server()
-
         event_handler = FileChangeHandler(self)
         observer = Observer()
         observer.schedule(event_handler, self.directory, recursive=True)
         observer.start()
 
+        self.listen_simple_server(port=self.port)
+
+        # this is probably pretty evil and not safe if there are any
+        # globals shared between the bokeh server and client code,
+        # which I think there are. The right fix may be to have an
+        # alternative to output_server that works in-process?
+        thread = Thread(target=self.background_simple_server)
+        thread.start()
+
+        # here we are connecting to ourselves, which is kind of
+        # silly, we should be going in-process
+        from bokeh.plotting import output_server
+        output_server(self.appname)
+
         self.refresh(open_browser=True)
 
         try:
-            # TODO this is if we were starting our own server
-            #start.start_simple_server()
-            while True:
-                time.sleep(1)
+            # thread.join isn't actually interruptable
+            # but leaving the keyboardinterrupt handler
+            # for now since I want to replace the thread
+            # stuff by avoiding the blocking output_server
+            # call above.
+            thread.join()
         except KeyboardInterrupt:
+            self.stop_simple_server()
             observer.stop()
         observer.join()
-        #start.stop()
-        self.stop_background_server()
 
 class Develop(LocalServer):
     name = "develop"
