@@ -3,14 +3,13 @@ from __future__ import print_function
 import argparse
 import os
 import time
-import subprocess
 import sys
 
 from bokeh.settings import settings
-from bokeh.server import start
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
-from threading import Thread
+
+from .server import Server
 
 def die(message):
     print(message, file=sys.stderr)
@@ -47,6 +46,7 @@ class LocalServer(Subcommand):
         self.parser.add_argument('--port', metavar='PORT', type=int, help="Port to listen on", default=-1)
         self.port = 5006
         self.develop_mode = False
+        self.server = None
 
     def load(self, src_path):
         import ast
@@ -58,12 +58,11 @@ class LocalServer(Subcommand):
         exec(code, module.__dict__)
 
     def refresh(self, open_browser):
-        from bokeh.plotting import show, push
         from bokeh.io import curdoc
 
         curdoc().context.develop_shell.error_panel.visible = False
         curdoc().context.develop_shell.reloading.visible = True
-        push()
+        self.server.push(curdoc())
 
         # TODO rather than clearing curdoc() we'd ideally
         # save the old one and compute a diff to send.
@@ -84,9 +83,9 @@ class LocalServer(Subcommand):
 
         curdoc().context.develop_shell.reloading.visible = False
         if open_browser:
-            show(curdoc())
+            self.server.show(curdoc())
         else:
-            push()
+            self.server.push(curdoc())
         print("Done loading %s" % self.docpy)
 
     def file_modified(self, path):
@@ -94,31 +93,6 @@ class LocalServer(Subcommand):
         # don't even watch for them
         if self.develop_mode and path == self.docpy:
             self.refresh(open_browser=False)
-
-    # this is a cut-and-paste from bokeh.server in order to
-    # start the main loop separately
-    def listen_simple_server(self, port=-1, args=None):
-        from bokeh.server.settings import settings as server_settings
-        from tornado.httpserver import HTTPServer
-        from bokeh.server.app import bokeh_app, app
-        from bokeh.server.configure import configure_flask, make_tornado_app, register_blueprint
-
-        configure_flask(config_argparse=args)
-        if server_settings.model_backend.get('start-redis', False):
-            start.start_redis()
-        register_blueprint()
-        start.tornado_app = make_tornado_app(flask_app=app)
-        start.server = HTTPServer(start.tornado_app)
-        if port < 0:
-            port = server_settings.port
-        start.server.listen(port, server_settings.ip)
-
-    def background_simple_server(self):
-        from tornado import ioloop
-        ioloop.IOLoop.instance().start()
-
-    def stop_simple_server(self):
-        start.stop()
 
     def func(self, args):
 
@@ -146,31 +120,14 @@ class LocalServer(Subcommand):
         observer.schedule(event_handler, self.directory, recursive=True)
         observer.start()
 
-        self.listen_simple_server(port=self.port)
-
-        # this is probably pretty evil and not safe if there are any
-        # globals shared between the bokeh server and client code,
-        # which I think there are. The right fix may be to have an
-        # alternative to output_server that works in-process?
-        thread = Thread(target=self.background_simple_server)
-        thread.start()
-
-        # here we are connecting to ourselves, which is kind of
-        # silly, we should be going in-process
-        from bokeh.plotting import output_server
-        output_server(self.appname)
+        self.server = Server(port=self.port)
 
         self.refresh(open_browser=True)
 
         try:
-            # thread.join isn't actually interruptable
-            # but leaving the keyboardinterrupt handler
-            # for now since I want to replace the thread
-            # stuff by avoiding the blocking output_server
-            # call above.
-            thread.join()
+            self.server.waitFor()
         except KeyboardInterrupt:
-            self.stop_simple_server()
+            self.server.stop()
             observer.stop()
         observer.join()
 
