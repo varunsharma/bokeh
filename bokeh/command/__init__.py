@@ -60,19 +60,15 @@ class LocalServer(Subcommand):
     def refresh(self, open_browser):
         from bokeh.io import curdoc
 
+        curdoc().context.develop_shell.error_panel.error = ""
         curdoc().context.develop_shell.error_panel.visible = False
         curdoc().context.develop_shell.reloading.visible = True
         self.server.push(curdoc())
 
         # TODO rather than clearing curdoc() we'd ideally
         # save the old one and compute a diff to send.
-        # also we have a hack here to keep the old develop
-        # shell ID :-/
-        old_shell = curdoc().context.develop_shell
         curdoc().clear()
-        curdoc().context.develop_shell = old_shell
         try:
-            print("Loading %s" % self.docpy)
             self.load(self.docpy)
         except Exception as e:
             import traceback
@@ -82,11 +78,11 @@ class LocalServer(Subcommand):
             curdoc().context.develop_shell.error_panel.visible = True
 
         curdoc().context.develop_shell.reloading.visible = False
+
         if open_browser:
             self.server.show(curdoc())
         else:
             self.server.push(curdoc())
-        print("Done loading %s" % self.docpy)
 
     def file_modified(self, path):
         # TODO rather than ignoring file changes in prod mode,
@@ -120,7 +116,7 @@ class LocalServer(Subcommand):
         observer.schedule(event_handler, self.directory, recursive=True)
         observer.start()
 
-        self.server = Server(port=self.port)
+        self.server = Server(port=self.port, appname=self.appname)
 
         self.refresh(open_browser=True)
 
