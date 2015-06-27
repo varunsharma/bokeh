@@ -37,15 +37,8 @@ class Server(object):
 
         self._create_document()
 
-    def show(self, doc):
-        """Push the document and then open it in a browser"""
-        self.push(doc)
-
-        from bokeh.browserlib import get_browser_controller
-        controller = get_browser_controller()
-        link = "http://localhost:%d/bokeh/doc/%s/%s" % (self.port, self.docid, doc.context._id)
-
-        controller.open(link, new='window')
+    def document_link(self, doc):
+        return "http://localhost:%d/bokeh/doc/%s/%s" % (self.port, self.docid, doc.context._id)
 
     def push(self, doc, dirty_only=True):
         """Push changes to the document to the client"""

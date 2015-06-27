@@ -79,10 +79,12 @@ class LocalServer(Subcommand):
 
         curdoc().context.develop_shell.reloading.visible = False
 
+        self.server.push(curdoc())
+
         if open_browser:
-            self.server.show(curdoc())
-        else:
-            self.server.push(curdoc())
+            from bokeh.browserlib import get_browser_controller
+            controller = get_browser_controller()
+            controller.open(self.server.document_link(curdoc()), new='window')
 
     def file_modified(self, path):
         # TODO rather than ignoring file changes in prod mode,
