@@ -8,8 +8,7 @@ class ReloadingView extends ContinuumView
   initialize: (options) ->
     super(options)
     @$el.addClass("bk-reloading")
-    @$el.empty()
-    @$el.text("Reloading...")
+    @$el.html("<div class=\"bk-reloading-icon\"></div>")
     @render()
 
     @listenTo(@model, 'change:visible', @changed)
