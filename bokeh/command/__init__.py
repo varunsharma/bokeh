@@ -77,7 +77,7 @@ class LocalServer(Subcommand):
             import traceback
             formatted = traceback.format_exc(e)
 
-            error = "Invalid syntax in \"%s\" on line %d:\n  %s" % (os.path.basename(e.filename), e.lineno, e.text)
+            error = "Invalid syntax in \"%s\" on line %d:\n%s" % (os.path.basename(e.filename), e.lineno, e.text)
             error_detail = formatted
         except Exception, e:
             import traceback
@@ -86,7 +86,7 @@ class LocalServer(Subcommand):
             exc_type, exc_value, exc_traceback = sys.exc_info()
             filename, line_number, func, txt = traceback.extract_tb(exc_traceback)[-1]
 
-            error = "%s\nFile \"%s\", line %d, in %s:\n  %s" % (str(e), os.path.basename(filename), line_number, func, txt)
+            error = "%s\nFile \"%s\", line %d, in %s:\n%s" % (str(e), os.path.basename(filename), line_number, func, txt)
             error_detail = formatted
 
         curdoc().context.develop_shell.error_panel.error = error
