@@ -44,6 +44,8 @@ class LocalServer(Subcommand):
     def __init__(self, **kwargs):
         super(LocalServer, self).__init__(**kwargs)
         self.parser.add_argument('--port', metavar='PORT', type=int, help="Port to listen on", default=-1)
+        self.parser.add_argument('directory', nargs='?',  metavar='APPDIR', help="The app directory (current directory if not specified)",
+                                 default=os.getcwd())
         self.port = 5006
         self.develop_mode = False
         self.server = None
@@ -110,7 +112,7 @@ class LocalServer(Subcommand):
 
     def func(self, args):
 
-        self.directory = os.getcwd()
+        self.directory = args.directory
         self.docpy = os.path.join(self.directory, "doc.py")
 
         if not os.path.exists(self.docpy):
