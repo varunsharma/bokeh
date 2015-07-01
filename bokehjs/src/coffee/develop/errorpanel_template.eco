@@ -1,6 +1,7 @@
 <div class="bk-error-top">
   <h2>Error in application</h2>
   <pre><%= @error %></pre>
+  <a class="bk-error-expand-hint">Expand below for the full traceback...</a>
 </div>
 <div class="bk-error-expander">
 </div>

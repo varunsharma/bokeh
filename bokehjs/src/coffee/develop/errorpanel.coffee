@@ -22,17 +22,22 @@ class ErrorPanelView extends ContinuumView
   # jquery show/hide with no args when not animating.
   updateDetailExpansion: (animate...) ->
     if @mget("error_detail").length > 0
-      @$el.find(".bk-error-expander").show()
       if @show_detail
         @$el.find(".bk-error-expander").addClass("open")
         @$el.find(".bk-error-bottom").show(animate...)
+        @$el.find(".bk-error-expand-hint").show()
+        @$el.find(".bk-error-expand-hint").css("visibility", "hidden")
       else
         @$el.find(".bk-error-expander").removeClass("open")
         @$el.find(".bk-error-bottom").hide(animate...)
+        @$el.find(".bk-error-expand-hint").css("visibility", "visible")
+        @$el.find(".bk-error-expand-hint").show()
+      @$el.find(".bk-error-expander").show()
     else
       # this is because there are no details, so no animation
       @$el.find(".bk-error-expander").hide()
       @$el.find(".bk-error-bottom").hide()
+      @$el.find(".bk-error-expand-hint").hide()
 
   render: () ->
     if @mget("visible")
@@ -43,6 +48,10 @@ class ErrorPanelView extends ContinuumView
         @$el.html(@$contents)
         animate = []
         @$el.find(".bk-error-expander").click (event) =>
+          event.preventDefault()
+          @show_detail = not @show_detail
+          @render()
+        @$el.find(".bk-error-expand-hint").click (event) =>
           event.preventDefault()
           @show_detail = not @show_detail
           @render()
