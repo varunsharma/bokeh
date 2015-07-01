@@ -69,16 +69,29 @@ class LocalServer(Subcommand):
         # TODO rather than clearing curdoc() we'd ideally
         # save the old one and compute a diff to send.
         curdoc().clear()
+        error = ""
+        error_detail = ""
         try:
             self.load(self.docpy)
-        except Exception as e:
+        except SyntaxError, e:
             import traceback
             formatted = traceback.format_exc(e)
-            print(formatted)
-            # TODO should put the file:line in the short message perhaps
-            curdoc().context.develop_shell.error_panel.error = e.msg
-            curdoc().context.develop_shell.error_panel.error_detail = formatted
-            curdoc().context.develop_shell.error_panel.visible = True
+
+            error = "Invalid syntax in \"%s\" on line %d:\n  %s" % (os.path.basename(e.filename), e.lineno, e.text)
+            error_detail = formatted
+        except Exception, e:
+            import traceback
+            formatted = traceback.format_exc(e)
+
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            filename, line_number, func, txt = traceback.extract_tb(exc_traceback)[-1]
+
+            error = "%s\nFile \"%s\", line %d, in %s:\n  %s" % (str(e), os.path.basename(filename), line_number, func, txt)
+            error_detail = formatted
+
+        curdoc().context.develop_shell.error_panel.error = error
+        curdoc().context.develop_shell.error_panel.error_detail = error_detail
+        curdoc().context.develop_shell.error_panel.visible = len(error) > 0
 
         curdoc().context.develop_shell.reloading.visible = False
 
