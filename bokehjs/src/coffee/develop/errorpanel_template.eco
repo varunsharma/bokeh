@@ -1,5 +1,5 @@
 <div class="bk-error-top">
-  <h2>Error in application</h2>
+  <h2>Bokeh app failed to load</h2>
   <pre><%= @error %></pre>
   <a class="bk-error-expand-hint">Expand below for the full traceback...</a>
 </div>
