@@ -38,6 +38,10 @@ class FileChangeHandler(FileSystemEventHandler):
         if event.event_type == "modified":
             self.server.file_modified(event.src_path)
 
+def current_time():
+    import datetime
+    return datetime.datetime.now()
+
 class LocalServer(Subcommand):
     """Abstract base class for subcommands that launch a single-user local server"""
 
@@ -67,6 +71,7 @@ class LocalServer(Subcommand):
         curdoc().context.develop_shell.error_panel.visible = False
         curdoc().context.develop_shell.reloading.visible = True
         self.server.push(curdoc())
+        started_load = current_time()
 
         # TODO rather than clearing curdoc() we'd ideally
         # save the old one and compute a diff to send.
@@ -96,6 +101,13 @@ class LocalServer(Subcommand):
         curdoc().context.develop_shell.error_panel.visible = len(error) > 0
 
         curdoc().context.develop_shell.reloading.visible = False
+
+        ended_load = current_time()
+        elapsed = ended_load - started_load
+        if elapsed.total_seconds() < 0.8:
+            # this is so the progress spinner is at least briefly visible
+            import time
+            time.sleep(0.4)
 
         self.server.push(curdoc())
 
