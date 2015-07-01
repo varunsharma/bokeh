@@ -61,6 +61,7 @@ class LocalServer(Subcommand):
         from bokeh.io import curdoc
 
         curdoc().context.develop_shell.error_panel.error = ""
+        curdoc().context.develop_shell.error_panel.error_detail = ""
         curdoc().context.develop_shell.error_panel.visible = False
         curdoc().context.develop_shell.reloading.visible = True
         self.server.push(curdoc())
@@ -74,7 +75,9 @@ class LocalServer(Subcommand):
             import traceback
             formatted = traceback.format_exc(e)
             print(formatted)
-            curdoc().context.develop_shell.error_panel.error = formatted
+            # TODO should put the file:line in the short message perhaps
+            curdoc().context.develop_shell.error_panel.error = e.msg
+            curdoc().context.develop_shell.error_panel.error_detail = formatted
             curdoc().context.develop_shell.error_panel.visible = True
 
         curdoc().context.develop_shell.reloading.visible = False

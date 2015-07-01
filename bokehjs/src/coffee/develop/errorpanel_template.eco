@@ -1,0 +1,10 @@
+<div class="bk-error-top">
+  <h2>Error in application</h2>
+  <pre><%= @error %></pre>
+</div>
+<div class="bk-error-expander">
+</div>
+<div class="bk-error-bottom">
+  <h2>Details</h2>
+  <pre><%= @error_detail %></pre>
+</div>

@@ -3,26 +3,62 @@ $ = require "jquery"
 
 ContinuumView = require "../common/continuum_view"
 HasProperties = require "../common/has_properties"
+errorpanel_template = require "./errorpanel_template"
 
 class ErrorPanelView extends ContinuumView
   initialize: (options) ->
     super(options)
+    @$contents = null
+    @show_detail = false
     @$el.addClass("bk-error-panel")
-    @$el.empty()
     @render()
+    # TODO often all three properties change at once,
+    # when that happens we render three times
+    @listenTo(@model, 'change:error', @changedMessages)
+    @listenTo(@model, 'change:error_detail', @changedMessages)
+    @listenTo(@model, 'change:visible', @render)
 
-    @listenTo(@model, 'change', @changed)
+  # the ... stuff is because we want to be able to call
+  # jquery show/hide with no args when not animating.
+  updateDetailExpansion: (animate...) ->
+    if @mget("error_detail").length > 0
+      @$el.find(".bk-error-expander").show()
+      if @show_detail
+        @$el.find(".bk-error-expander").addClass("open")
+        @$el.find(".bk-error-bottom").show(animate...)
+      else
+        @$el.find(".bk-error-expander").removeClass("open")
+        @$el.find(".bk-error-bottom").hide(animate...)
+    else
+      # this is because there are no details, so no animation
+      @$el.find(".bk-error-expander").hide()
+      @$el.find(".bk-error-bottom").hide()
 
   render: () ->
     if @mget("visible")
-       @$el.show() # TODO animate this
+      first = @$contents == null
+      animate = [500]
+      if first
+        @$contents = $(errorpanel_template(@model.attributes))
+        @$el.html(@$contents)
+        animate = []
+        @$el.find(".bk-error-expander").click (event) =>
+          event.preventDefault()
+          @show_detail = not @show_detail
+          @render()
+      @updateDetailExpansion(animate...)
+      @$el.show()
     else
-       @$el.hide()
-    @$el.html("<h2>Error in application</h2><pre></pre>")
-    @$el.children("pre").text(@mget("error"))
-    return @
+      @$el.hide()
+      @invalidateContents()
 
-  changed: () ->
+  invalidateContents: () ->
+    @$contents?.detach()
+    @$contents = null
+    @$el.empty()
+
+  changedMessages: () ->
+    @invalidateContents()
     @render()
 
 class ErrorPanel extends HasProperties
@@ -32,7 +68,8 @@ class ErrorPanel extends HasProperties
   defaults: () ->
     return _.extend {}, super(), {
       visible: false,
-      error: ""
+      error: "",
+      error_detail: ""
     }
 
 module.exports =

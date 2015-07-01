@@ -18,5 +18,9 @@ class ErrorPanel(PlotObject):
     The error message to display
     """)
 
+    error_detail = String("", help="""
+    More details on the error, such as logs or stack trace
+    """)
+
     def __init__(self, **kwargs):
         super(ErrorPanel, self).__init__(**kwargs)
