@@ -34,9 +34,12 @@ class FileChangeHandler(FileSystemEventHandler):
         #print("file event: " + repr(event))
         #print("event_type: " + event.event_type)
         #print("src_path: " + event.src_path)
-        # TODO handle more kinds of file changing
         if event.event_type == "modified":
             self.server.file_modified(event.src_path)
+        elif event.event_type == "created" or event.event_type == "deleted":
+            self.server.file_modified(event.src_path)
+        elif event.event_type == "moved":
+            self.server.file_modified(event.dest_path)
 
 def current_time():
     import datetime
@@ -121,6 +124,8 @@ class LocalServer(Subcommand):
         # don't even watch for them
         if self.develop_mode and path == self.mainpy:
             self.refresh(open_browser=False)
+        else:
+            print("Ignoring change to " + path + " expecting " + self.mainpy)
 
     def func(self, args):
 
