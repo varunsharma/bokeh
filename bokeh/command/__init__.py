@@ -79,7 +79,7 @@ class LocalServer(Subcommand):
         error = ""
         error_detail = ""
         try:
-            self.load(self.docpy)
+            self.load(self.mainpy)
         except SyntaxError, e:
             import traceback
             formatted = traceback.format_exc(e)
@@ -119,16 +119,16 @@ class LocalServer(Subcommand):
     def file_modified(self, path):
         # TODO rather than ignoring file changes in prod mode,
         # don't even watch for them
-        if self.develop_mode and path == self.docpy:
+        if self.develop_mode and path == self.mainpy:
             self.refresh(open_browser=False)
 
     def func(self, args):
 
         self.directory = args.directory
-        self.docpy = os.path.join(self.directory, "doc.py")
+        self.mainpy = os.path.join(self.directory, "main.py")
 
-        if not os.path.exists(self.docpy):
-            die("No 'doc.py' found in %s." % (self.directory))
+        if not os.path.exists(self.mainpy):
+            die("No 'main.py' found in %s." % (self.directory))
 
         self.appname = os.path.basename(self.directory)
 
