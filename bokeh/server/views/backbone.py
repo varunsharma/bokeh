@@ -17,7 +17,10 @@ from ..views import make_json
 from ..models import docs
 
 def init_bokeh(clientdoc):
-    request.bokeh_server_document = clientdoc
+    # there's no request if we're pushing a new doc from
+    # inside the server itself
+    if request:
+        request.bokeh_server_document = clientdoc
     clientdoc.autostore = False
     clientdoc.autoadd = False
 

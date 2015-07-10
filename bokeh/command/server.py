@@ -3,16 +3,6 @@ from __future__ import print_function
 from ..server import start
 from threading import Thread
 
-
-def monkey_init_bokeh(clientdoc):
-    # we monkeypatch to remove the below line that assumes a request
-    #request.bokeh_server_document = clientdoc
-    clientdoc.autostore = False
-    clientdoc.autoadd = False
-
-from ..server.views import backbone
-backbone.init_bokeh = monkey_init_bokeh
-
 class Server(object):
     """Runs a server which displays an in-process document"""
 
