@@ -24,7 +24,6 @@ def doc_prepare():
     register_blueprint()
     return app
 
-http_server = None
 def start_redis():
     work_dir = getattr(bokeh_app, 'work_dir', os.getcwd())
     data_file = getattr(bokeh_app, 'data_file', 'redis.db')
