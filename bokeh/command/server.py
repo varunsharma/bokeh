@@ -88,22 +88,16 @@ class Server(object):
     # cut-and-paste from bokeh.server to avoid going through REST
     def _create_document(self):
         from ..server.app import bokeh_app
-        from ..server.views.main import _makedoc # naughty
+        from ..server.views.main import find_or_create_docid_by_title
         from ..server.models import docs
         from ..server.serverbb import BokehServerTransaction
         from ..io import curdoc
         from .. import protocol
 
         user = bokeh_app.current_user()
-        existing = filter(lambda x: x['title'] == self.appname, user.docs)
-        if len(existing) > 0:
-            self.docid = existing[0]['docid']
-        else:
-            doc = _makedoc(bokeh_app.servermodel_storage, user, self.appname)
-            self.docid = doc.docid
+        self.docid = find_or_create_docid_by_title(self.appname)
 
-        docid = self.docid
-        server_doc = docs.Doc.load(bokeh_app.servermodel_storage, docid)
+        server_doc = docs.Doc.load(bokeh_app.servermodel_storage, self.docid)
         temporary_docid = None #str(uuid.uuid4())
         t = BokehServerTransaction(
             user, server_doc, 'rw', temporary_docid=None,
