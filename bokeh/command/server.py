@@ -68,7 +68,6 @@ class Server(object):
 
         docid = self.docid
         server_doc = docs.Doc.load(bokeh_app.servermodel_storage, docid)
-        print("loaded server doc %s" % docid)
         bokehuser = bokeh_app.current_user()
         temporary_docid = None #str(uuid.uuid4())
         t = BokehServerTransaction(
@@ -128,15 +127,12 @@ class Server(object):
         existing = filter(lambda x: x['title'] == self.appname, user.docs)
         if len(existing) > 0:
             self.docid = existing[0]['docid']
-            print("Using existing doc %s id %s" % (self.appname, self.docid))
         else:
             doc = _makedoc(bokeh_app.servermodel_storage, user, self.appname)
             self.docid = doc.docid
-            print("Made new doc %s id %s" % (self.appname, self.docid))
 
         docid = self.docid
         server_doc = docs.Doc.load(bokeh_app.servermodel_storage, docid)
-        print("on create server doc %s" % docid)
         temporary_docid = None #str(uuid.uuid4())
         t = BokehServerTransaction(
             user, server_doc, 'rw', temporary_docid=None,
