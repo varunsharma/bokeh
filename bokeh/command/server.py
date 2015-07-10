@@ -100,7 +100,7 @@ class Server(object):
         server_doc = docs.Doc.load(bokeh_app.servermodel_storage, self.docid)
         temporary_docid = None #str(uuid.uuid4())
         t = BokehServerTransaction(
-            user, server_doc, 'rw', temporary_docid=None,
+            user, server_doc, 'r', temporary_docid=None,
         )
         t.load()
         clientdoc = t.clientdoc
