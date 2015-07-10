@@ -33,11 +33,7 @@ class Server(object):
     def push(self, doc, dirty_only=True):
         """Push changes to the document to the client"""
 
-        ## cut and paste from bokeh.server to avoid REST
-        from ..server.models import docs
-        from ..server.app import bokeh_app
-        from ..server.serverbb import BokehServerTransaction
-        from ..server.views.backbone import ws_update
+        from ..server.views.backbone import push_data
         from .. import protocol
 
         doc._add_all()
@@ -50,24 +46,16 @@ class Server(object):
             return
 
         # TODO clearly serializing to json here is absurd
+        # but it's difficult to eliminate because we rely
+        # on the JSONEncoder to convert data types, but it
+        # goes straight to a string, so hard to avoid the string
         json = protocol.serialize_json(doc.dump(*models))
         data = protocol.deserialize_json(json.decode('utf-8'))
 
         for model in models:
             model._dirty = False
 
-        docid = self.docid
-        server_doc = docs.Doc.load(bokeh_app.servermodel_storage, docid)
-        bokehuser = bokeh_app.current_user()
-        temporary_docid = None #str(uuid.uuid4())
-        t = BokehServerTransaction(
-            bokehuser, server_doc, 'rw', temporary_docid=temporary_docid
-        )
-        t.load()
-        clientdoc = t.clientdoc
-        clientdoc.load(*data, events='none', dirty=True)
-        t.save()
-        ws_update(clientdoc, t.write_docid, t.changed)
+        push_data(client='python', docid=self.docid, temporary_docid=None, data=data)
 
     def waitFor(self):
         """Block until server shuts down"""
