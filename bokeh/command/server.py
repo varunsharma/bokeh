@@ -23,7 +23,7 @@ class Server(object):
         if 'port' in kwargs:
             self.port = kwargs['port']
 
-        self._listen_simple_server(port=self.port)
+        self._listen_server(port=self.port)
         self.appname = 'bokeh-app'
         if 'appname' in kwargs:
             self.appname = kwargs['appname']
@@ -32,7 +32,7 @@ class Server(object):
         # globals shared between the bokeh server and client code,
         # which I think there are. The right fix may be to have an
         # alternative to output_server that works in-process?
-        self.thread = Thread(target=self._background_simple_server)
+        self.thread = Thread(target=self._background_server)
         self.thread.start()
 
         self._create_document()
@@ -87,32 +87,25 @@ class Server(object):
 
     def stop(self):
         """Shut down the server"""
-        self._stop_simple_server()
+        self._stop_server()
 
     # this is a cut-and-paste from bokeh.server in order to
     # start the main loop separately
-    def _listen_simple_server(self, port=-1, args=None):
+    def _listen_server(self, port=-1, args=None):
+        from ..server.start import create_listening_server
         from ..server.settings import settings as server_settings
-        from tornado.httpserver import HTTPServer
-        from ..server.app import bokeh_app, app
-        from ..server.configure import configure_flask, make_tornado_app, register_blueprint
+        from ..server.configure import configure_flask
 
         configure_flask(config_argparse=args)
-        if server_settings.model_backend.get('start-redis', False):
-            start.start_redis()
-        register_blueprint()
-        start.tornado_app = make_tornado_app(flask_app=app)
-        start.server = HTTPServer(start.tornado_app)
-        if port < 0:
-            port = server_settings.port
-        start.server.listen(port, server_settings.ip)
+        if port >= 0:
+            server_settings.port = port
+        self.server = create_listening_server()
 
-    def _background_simple_server(self):
-        from tornado import ioloop
-        ioloop.IOLoop.instance().start()
+    def _background_server(self):
+        start.start(server=self.server)
 
-    def _stop_simple_server(self):
-        start.stop()
+    def _stop_server(self):
+        start.stop(server=self.server)
 
     # cut-and-paste from bokeh.server to avoid going through REST
     def _create_document(self):
