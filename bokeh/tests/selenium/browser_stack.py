@@ -23,7 +23,7 @@ class Test(unittest.TestCase):
             command_executor='http://' + bs_username + ':' + bs_api_key + '@hub.browserstack.com:80/wd/hub',
             desired_capabilities=desired_cap)
         self.driver.implicitly_wait(30)
-        self.driver.get("http://localhost:8000/periodic.html")
+        self.driver.get("http://localhost:8000/boxplot.html")
         self.verificationErrors = []
         self.accept_next_alert = True
 
