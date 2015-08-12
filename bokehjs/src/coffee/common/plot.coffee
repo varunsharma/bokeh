@@ -40,6 +40,12 @@ class PlotView extends ContinuumView
       @throttled_render(true)
     return
 
+  remove: () =>
+    super()
+    # When this view is removed, also remove all of the tools.
+    for id, tool_view of @tools
+      tool_view.remove()
+
   initialize: (options) ->
     super(options)
     @pause()
@@ -264,7 +270,7 @@ class PlotView extends ContinuumView
       @outline_props.set_value(ctx)
       ctx.strokeRect.apply(ctx, frame_box)
 
-    @_render_levels(ctx, ['image', 'underlay', 'glyph'], frame_box)
+    @_render_levels(ctx, ['image', 'underlay', 'glyph', 'annotation'], frame_box)
     @_render_levels(ctx, ['overlay', 'tool'])
 
     if title
