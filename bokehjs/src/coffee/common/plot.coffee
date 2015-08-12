@@ -297,6 +297,9 @@ class PlotView extends ContinuumView
       renderers = _.sortBy(_.values(@levels[level]), sortKey)
       for renderer in renderers
         renderer.render()
+        console.log ctx.hash()
+        console.log ctx.stack
+          loose: true
 
     ctx.restore()
 

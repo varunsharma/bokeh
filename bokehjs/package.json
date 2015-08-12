@@ -74,7 +74,7 @@
   },
   "browserify-shim": {},
   "dependencies": {
-    "Canteen": "git://github.com/rbmoore/Canteen#05f466a1ac9ea074f0e754d4b7a6c8ae31c18ae7",
+    "Canteen": "platfora/Canteen",
     "jquery": "^2.1.1",
     "jquery-mousewheel": "^3.1.12",
     "jquery-ui": "^1.10.5",

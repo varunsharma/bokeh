@@ -1,6 +1,5 @@
 from selenium import webdriver
 import os
-# import fast_selenium
 
 class SeleniumTest():
   try:
