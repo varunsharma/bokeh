@@ -18,6 +18,7 @@ class SeleniumTest():
     'browserstack.local': True,
     'browserstack.debug': True
   }
+  # os.system('bokeh/tests/selenium/BrowserStackLocal ' + bs_api_key + ' &')
   driver = webdriver.Remote(command_executor=url, desired_capabilities=desired_capabilities)
 
   @classmethod
