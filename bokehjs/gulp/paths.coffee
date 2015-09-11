@@ -2,6 +2,21 @@ BUILD_DIR = "./build/"
 JS_BUILD = "#{BUILD_DIR}js/"
 SERVER_DIR = "../bokeh/server/static/"
 
+phosphorTypeFiles = [ "./node_modules/phosphor-boxpanel/lib/index.d.ts" ]
+phosphorTypeFiles = phosphorTypeFiles.concat(("./node_modules/phosphor-boxpanel/node_modules/" + dep + "/lib/index.d.ts") for dep in [
+             "phosphor-boxengine",
+             "phosphor-disposable",
+             "phosphor-domutil",
+             "phosphor-messaging",
+             "phosphor-properties",
+             "phosphor-queue",
+             "phosphor-signaling",
+             "phosphor-widget"
+             ])
+phosphorTypeFiles = phosphorTypeFiles.concat(("./node_modules/phosphor-boxpanel/node_modules/phosphor-widget/node_modules/" + dep + "/lib/index.d.ts") for dep in [
+             "phosphor-nodewrapper"
+             ])
+
 module.exports =
   buildDir:
     all: BUILD_DIR
@@ -46,6 +61,4 @@ module.exports =
     ]
 
   phosphorTypes:
-    sources: [
-      "./src/vendor/phosphor-0.4.0/phosphor.d.ts"
-    ]
+    sources: phosphorTypeFiles

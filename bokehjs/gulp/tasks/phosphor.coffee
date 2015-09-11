@@ -1,9 +1,11 @@
 # build phosphor-related stuff
 
 gulp = require "gulp"
+gutil = require "gulp-util"
 ts = require "typescript"
-through = require "gulp-through"
 savefile = require "gulp-savefile"
+es = require "event-stream"
+reduce = require "stream-reduce"
 
 paths = require "../paths"
 utils = require "../utils"
@@ -269,8 +271,8 @@ parseFile = (path, contents) ->
 
   report = (node, message) ->
     pos = sourceFile.getLineAndCharacterOfPosition(node.getStart())
-    console.log("#{pos.line}: #{pos.character}: #{ts.SyntaxKind[node.kind]}:  #{message}")
-    throw new Error("#{pos.line}: #{pos.character}: #{ts.SyntaxKind[node.kind]}:  #{message}")
+    console.log("#{path}: #{pos.line}: #{pos.character}: #{ts.SyntaxKind[node.kind]}:  #{message}")
+    throw new Error("#{path}: #{pos.line}: #{pos.character}: #{ts.SyntaxKind[node.kind]}:  #{message}")
 
   textFromEntityName = (node) ->
     if node.right
@@ -370,6 +372,10 @@ parseFile = (path, contents) ->
         console.log("  class has type parameter " + node.symbol?.text)
       when ts.SyntaxKind.CallSignature
         ; # example: (value: T, index: number): U
+      when ts.SyntaxKind.ExportKeyword
+        ; # example "export"
+      when ts.SyntaxKind.DeclareKeyword
+        ; # example "declare"
       else
         report(node, "unhandled child of class " + className)
 
@@ -401,34 +407,58 @@ parseFile = (path, contents) ->
         accumulateEnums.push(new Enum(node.name.text, values))
       when ts.SyntaxKind.ImportEqualsDeclaration
         ; # example: import Size = utility.Size
+      when ts.SyntaxKind.ImportDeclaration
+        ; # example: import { Message } from 'phosphor-messaging';
       when ts.SyntaxKind.VariableStatement
         ; # example: var IShellView: Token<IShellView>;
       when ts.SyntaxKind.TypeAliasDeclaration
         ; # example: type FactoryChild = (string | Elem) | (string | Elem)[];
+      when ts.SyntaxKind.ExpressionStatement
+        ; # example: export declare type Slot<T, U> = (sender: T, args: U) => void;
+      when ts.SyntaxKind.EndOfFileToken
+        console.log("EOF")
       else
         report(node, "unhandled child of module " + moduleName)
 
     false # do not abort foreach
 
+  parseFileAsModule = (node, moduleName, accumulateModules) ->
+    console.log("FILE " + moduleName)
+    submodules = []
+    classes = []
+    enums = []
+
+    ts.forEachChild(node, (child) -> parseModuleChild(moduleName, child, submodules, classes, enums))
+
+    accumulateModules.push(new Module(moduleName, submodules, classes, enums))
+
+    false # do not abort foreach
+
+  parseModule = (node, accumulateModules) ->
+    console.log("  module " + node.name.text)
+    submodules = []
+    classes = []
+    enums = []
+
+    switch node.body.kind
+      when ts.SyntaxKind.ModuleBlock
+        ts.forEachChild(node.body, (child) -> parseModuleChild(node.name.text, child, submodules, classes, enums))
+      when ts.SyntaxKind.ModuleDeclaration
+        parseModules(node.body, submodules)
+      else
+        throw new Error("Unexpected module body " + node.body)
+
+    accumulateModules.push(new Module(node.name.text, submodules, classes, enums))
+
+    false # do not abort foreach
+
+  # parseModules is no longer used, because the way we do things
+  # now is to use npm modules instead of typescript modules,
+  # but keeping this code here for the moment
   parseModules = (node, accumulateModules) ->
     switch node.kind
       when ts.SyntaxKind.ModuleDeclaration
-        console.log("  module " + node.name.text)
-        submodules = []
-        classes = []
-        enums = []
-
-        # leave some modules empty
-        if node.name.text not in ['virtualdom', 'collections', 'di']
-          switch node.body.kind
-            when ts.SyntaxKind.ModuleBlock
-              ts.forEachChild(node.body, (child) -> parseModuleChild(node.name.text, child, submodules, classes, enums))
-            when ts.SyntaxKind.ModuleDeclaration
-              parseModules(node.body, submodules)
-            else
-              throw new Error("Unexpected module body " + node.body)
-
-        accumulateModules.push(new Module(node.name.text, submodules, classes, enums))
+        parseModule(node, accumulateModules)
       when ts.SyntaxKind.EndOfFileToken
         console.log("EOF")
       else
@@ -438,16 +468,31 @@ parseFile = (path, contents) ->
 
   modules = []
 
-  ts.forEachChild(sourceFile, (n) -> parseModules(n, modules))
+  re = new RegExp('.*/phosphor-([^/]+)/.*')
+  moduleName = re.exec(path)[1]
+
+  parseFileAsModule(sourceFile, moduleName, modules)
 
   coalesceModules(modules)
 
-buildPymodelsFromFile = (file, config) ->
+asyncFileToModules = (file, callback) ->
   contents = file._contents.toString('utf-8')
   modules = parseFile(file.path, contents)
+  callback(null, modules)
+
+modulesToOutputFile = (modules) ->
+
+  modules = coalesceModules(modules)
+
+  lookup = (id) ->
+    for m in modules
+      resolved = m._lookup(id)
+      if resolved?
+        return resolved
+    return null
 
   for m in modules
-    m.resolveIdentifiers()
+    m.resolveIdentifiers(lookup)
 
   allClasses = []
   allEnums = []
@@ -531,15 +576,23 @@ buildPymodelsFromFile = (file, config) ->
   for c in allClasses
     append(c.toPython())
 
-  #file.cwd = ""
-  #file.base = ""
-  file.path = "phosphor.py"
-  file.contents = new Buffer(builder)
+  new gutil.File({
+    # could have 'cwd', 'base' too
+    path: "phosphor.py"
+    contents: new Buffer(builder)
+  })
 
-buildPymodels = through 'buildPymodels', buildPymodelsFromFile, {}
+asyncModulesToOutputFile = (modules, callback) ->
+  file = modulesToOutputFile(modules)
+  callback(null, file)
+
+arrayConcat = (acc, data) ->
+  [].concat(acc).concat(data)
 
 gulp.task "phosphor:pymodels", ->
 
   gulp.src paths.phosphorTypes.sources
-   .pipe(buildPymodels())
+   .pipe(es.map(asyncFileToModules))
+   .pipe(reduce(arrayConcat, []))
+   .pipe(es.map(asyncModulesToOutputFile))
    .pipe(savefile())
