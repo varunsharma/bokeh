@@ -54,9 +54,6 @@ locations =
   QUADKEYTileSource:        require '../renderer/tile/quadkey_tile_source'
   BBoxTileSource:           require '../renderer/tile/bbox_tile_source'
 
-  DynamicImageRenderer:     require '../renderer/tile/dynamic_image_renderer'
-  ImageSource:              require '../renderer/tile/image_source'
-
   GlyphRenderer:            require '../renderer/glyph/glyph_renderer'
 
   AnnularWedge:             require '../renderer/glyph/annular_wedge'

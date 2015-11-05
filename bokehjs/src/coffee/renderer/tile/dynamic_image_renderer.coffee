@@ -6,9 +6,6 @@ ImagePool = require "./image_pool"
 {logger} = require "../../common/logging"
 
 class DynamicImageView extends PlotWidget
-  
-  bind_bokeh_events: () ->
-    @listenTo(@model, 'change', @request_render)
 
   get_extent: () ->
     return [@x_range.get('start'), @y_range.get('start'), @x_range.get('end'), @y_range.get('end')]
@@ -27,27 +24,31 @@ class DynamicImageView extends PlotWidget
   _map_data: () ->
     @initial_extent = @get_extent()
 
-  _on_tile_load: (e) =>
+  _on_image_load: (e) =>
     image_data = e.target.image_data
     image_data.img = e.target
-    @mget('image_source').add_image(image_data)
+    image_data.loaded = true
     @lastImage = image_data
 
     if @get_extent().join(':') == image_data.cache_key
       @request_render()
 
-  _on_tile_error: (e) =>
-    return ''
+  _on_image_error: (e) =>
+    logger.error('Error loading image: #{e.target.src}')
+    image_data = e.target.image_data
+    @mget('image_source').remove_image(image_data)
 
   _create_image: (bounds) ->
     image = new Image()
-    image.onload = @_on_tile_load
-    image.onerror = @_on_tile_error
+    image.onload = @_on_image_load
+    image.onerror = @_on_image_error
     image.alt = ''
     image.image_data =
       bounds : bounds
+      loaded : false
       cache_key : bounds.join(':')
 
+    @mget('image_source').add_image(image.image_data)
     image.src = @mget('image_source').get_image_url(bounds[0], bounds[1], bounds[2], bounds[3], Math.ceil(@map_frame.get('height')), Math.ceil(@map_frame.get('width')))
     return image
 
@@ -60,16 +61,19 @@ class DynamicImageView extends PlotWidget
 
     extent = @get_extent()
 
-    if @render_timer?
+    if @render_timer
       clearTimeout(@render_timer)
 
     image_obj = @mget('image_source').images[extent.join(':')]
-    if image_obj?
+    if image_obj? and image_obj.loaded
       @_draw_image(extent.join(':'))
-    else
-      if @lastImage?
-        @_draw_image(@lastImage.cache_key)
-      @render_timer = setTimeout((=> @_create_image(extent)), 65)
+      return
+
+    if @lastImage?
+      @_draw_image(@lastImage.cache_key)
+
+    if not image_obj?
+      @render_timer = setTimeout((=> @_create_image(extent)), 125)
 
   _draw_image: (image_key) ->
     image_obj = @mget('image_source').images[image_key]
