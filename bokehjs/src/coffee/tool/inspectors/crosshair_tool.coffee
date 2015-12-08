@@ -44,25 +44,25 @@ class CrosshairTool extends InspectTool.Model
 
     @set('spans', {
       width: new Span.Model({
-                               dimension: "width",
-                               render_mode: @get("render_mode"),
-                               location_units: @get("location_units"),
-                               line_color: @get("line_color"),
-                               line_width: @get('line_width'),
-                               line_alpha: @get('line_alpha')
-                               line_dash: @get('line_dash')
-                               line_dash_offset: @get('line_dash_offset')
-                             }),
+        dimension: "width"
+        render_mode: @get("render_mode")
+        location_units: @get("location_units")
+        line_color: @get("line_color")
+        line_width: @get('line_width')
+        line_alpha: @get('line_alpha')
+        line_dash: @get('line_dash')
+        line_dash_offset: @get('line_dash_offset')
+      }),
       height: new Span.Model({
-                               dimension: "height",
-                               render_mode: @get("render_mode"),
-                               location_units: @get("location_units"),
-                               line_color: @get("line_color"),
-                               line_width: @get('line_width'),
-                               line_alpha: @get('line_alpha')
-                               line_dash: @get('line_dash')
-                               line_dash_offset: @get('line_dash_offset')
-                             })
+        dimension: "height"
+        render_mode: @get("render_mode")
+        location_units: @get("location_units")
+        line_color: @get("line_color")
+        line_width: @get('line_width')
+        line_alpha: @get('line_alpha')
+        line_dash: @get('line_dash')
+        line_dash_offset: @get('line_dash_offset')
+      })
     })
 
     renderers = @get('plot').get('renderers')
