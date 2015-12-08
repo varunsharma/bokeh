@@ -10,6 +10,50 @@ Solver = require "./solver"
 # TODO - This should only be on in testing
 #require 'Canteen'
 
+fixup_context = (ctx) ->
+  _fixup_line_dash = (ctx) ->
+    if (!ctx.setLineDash)
+      ctx.setLineDash = (dash) ->
+        ctx.mozDash = dash
+        ctx.webkitLineDash = dash
+    if (!ctx.getLineDash)
+      ctx.getLineDash = () ->
+        return ctx.mozDash
+
+  _fixup_line_dash_offset = (ctx) ->
+    ctx.setLineDashOffset = (dash_offset) ->
+      ctx.lineDashOffset = dash_offset
+      ctx.mozDashOffset = dash_offset
+      ctx.webkitLineDashOffset = dash_offset
+    ctx.getLineDashOffset = () ->
+      return ctx.mozDashOffset
+
+  _fixup_image_smoothing = (ctx) ->
+    ctx.setImageSmoothingEnabled = (value) ->
+      ctx.imageSmoothingEnabled = value
+      ctx.mozImageSmoothingEnabled = value
+      ctx.oImageSmoothingEnabled = value
+      ctx.webkitImageSmoothingEnabled = value
+    ctx.getImageSmoothingEnabled = () ->
+      return ctx.imageSmoothingEnabled ? true
+
+  _fixup_measure_text = (ctx) ->
+    if ctx.measureText and not ctx.html5MeasureText?
+      ctx.html5MeasureText = ctx.measureText
+
+      ctx.measureText = (text) ->
+        textMetrics = ctx.html5MeasureText(text)
+        # fake it til you make it
+        textMetrics.ascent = ctx.html5MeasureText("m").width * 1.6
+        return textMetrics
+
+  _fixup_line_dash(ctx)
+  _fixup_line_dash_offset(ctx)
+  _fixup_image_smoothing(ctx)
+  _fixup_measure_text(ctx)
+
+  return ctx
+
 class CanvasView extends ContinuumView
   className: "bk-canvas-wrapper"
   template: canvas_template
@@ -70,48 +114,9 @@ class CanvasView extends ContinuumView
 
     # work around canvas incompatibilities
     # todo: this is done ON EACH DRAW, is that intended?
-    @_fixup_line_dash(@ctx)
-    @_fixup_line_dash_offset(@ctx)
-    @_fixup_image_smoothing(@ctx)
-    @_fixup_measure_text(@ctx)
+    fixup_context(@ctx)
 
     @model.new_bounds = false
-
-  _fixup_line_dash: (ctx) ->
-    if (!ctx.setLineDash)
-      ctx.setLineDash = (dash) ->
-        ctx.mozDash = dash
-        ctx.webkitLineDash = dash
-    if (!ctx.getLineDash)
-      ctx.getLineDash = () ->
-        return ctx.mozDash
-
-  _fixup_line_dash_offset: (ctx) ->
-    ctx.setLineDashOffset = (dash_offset) ->
-      ctx.lineDashOffset = dash_offset
-      ctx.mozDashOffset = dash_offset
-      ctx.webkitLineDashOffset = dash_offset
-    ctx.getLineDashOffset = () ->
-      return ctx.mozDashOffset
-
-  _fixup_image_smoothing: (ctx) ->
-    ctx.setImageSmoothingEnabled = (value) ->
-      ctx.imageSmoothingEnabled = value;
-      ctx.mozImageSmoothingEnabled = value;
-      ctx.oImageSmoothingEnabled = value;
-      ctx.webkitImageSmoothingEnabled = value;
-    ctx.getImageSmoothingEnabled = () ->
-      return ctx.imageSmoothingEnabled ? true
-
-  _fixup_measure_text: (ctx) ->
-    if ctx.measureText and not ctx.html5MeasureText?
-      ctx.html5MeasureText = ctx.measureText
-
-      ctx.measureText = (text) ->
-        textMetrics = ctx.html5MeasureText(text)
-        # fake it til you make it
-        textMetrics.ascent = ctx.html5MeasureText("m").width * 1.6
-        return textMetrics
 
 class Canvas extends LayoutBox.Model
   type: 'Canvas'
@@ -205,5 +210,7 @@ class Canvas extends LayoutBox.Model
       use_hidpi: true
     }
 
-module.exports =
+module.exports = {
   Model: Canvas
+  fixup_context: fixup_context
+}

@@ -50,6 +50,8 @@ class CrosshairTool extends InspectTool.Model
                                line_color: @get("line_color"),
                                line_width: @get('line_width'),
                                line_alpha: @get('line_alpha')
+                               line_dash: @get('line_dash')
+                               line_dash_offset: @get('line_dash_offset')
                              }),
       height: new Span.Model({
                                dimension: "height",
@@ -58,6 +60,8 @@ class CrosshairTool extends InspectTool.Model
                                line_color: @get("line_color"),
                                line_width: @get('line_width'),
                                line_alpha: @get('line_alpha')
+                               line_dash: @get('line_dash')
+                               line_dash_offset: @get('line_dash_offset')
                              })
     })
 
@@ -77,6 +81,8 @@ class CrosshairTool extends InspectTool.Model
       line_color: 'black',
       line_width: 1,
       line_alpha: 1.0
+      line_dash: []
+      line_dash_offset: 0
     })
 
 module.exports =

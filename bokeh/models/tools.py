@@ -24,8 +24,8 @@ from __future__ import absolute_import
 
 from ..model import Model
 from ..properties import abstract, Float, Color
-from ..properties import (Any, Bool, String, Enum, Instance, Either, List,
-                          Dict, Tuple)
+from ..properties import (Any, Bool, Int, String, Enum, Instance, Either, List,
+                          Dict, Tuple, DashPattern)
 from ..enums import Dimension
 
 from .renderers import Renderer
@@ -231,6 +231,15 @@ class CrosshairTool(Tool):
     Acceptable values are floating point numbers between 0 (transparent)
     and 1 (opaque).
 
+    """)
+
+    line_dash = DashPattern(help="""
+    How should the line be dashed.
+    """)
+
+    line_dash_offset = Int(0, help="""
+    The distance into the ``line_dash`` (in pixels) that the pattern should
+    start from.
     """)
 
 class BoxZoomTool(Tool):

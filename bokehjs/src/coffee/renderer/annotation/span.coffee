@@ -1,10 +1,13 @@
 _ = require "underscore"
 HasParent = require "../../common/has_parent"
 PlotWidget = require "../../common/plot_widget"
+{fixup_context} = require "../../common/canvas"
 {logger} = require "../../common/logging"
 properties = require "../../common/properties"
 
 class SpanView extends PlotWidget
+
+  tagName: 'canvas'
 
   initialize: (options) ->
     super(options)
@@ -24,12 +27,13 @@ class SpanView extends PlotWidget
       @$el.hide()
       return
 
+    dim = @mget('dimension')
     frame = @plot_model.get('frame')
     canvas = @plot_model.get('canvas')
     xmapper = @plot_view.frame.get('x_mappers')[@mget("x_range_name")]
     ymapper = @plot_view.frame.get('y_mappers')[@mget("y_range_name")]
 
-    if @mget('dimension') == 'width'
+    if dim == 'width'
       stop = canvas.vy_to_sy(@_calc_dim(@mget('location'), ymapper))
       sleft = canvas.vx_to_sx(frame.get('left'))
       width = frame.get('width')
@@ -41,15 +45,32 @@ class SpanView extends PlotWidget
       height = frame.get('height')
 
     if @mget("render_mode") == "css"
+      @$el.attr({
+        width: width
+        height: height
+      })
       @$el.css({
-        'top': stop,
-        'left': sleft,
-        'width': "#{width}px",
-        'height': "#{height}px"
-        'z-index': 1000
-        'background-color': @mget('line_color')
-        'opacity': @mget('line_alpha')
-        })
+        top: stop
+        left: sleft
+        width: "#{width}px"
+        height: "#{height}px"
+        zIndex: 1000
+      })
+
+      ctx = fixup_context(@$el[0].getContext('2d'))
+
+      ctx.save()
+      ctx.clearRect(0, 0, width, height)
+      ctx.beginPath()
+      @line_props.set_value(ctx)
+      ctx.moveTo(0, 0)
+      if dim == "width"
+        ctx.lineTo(width, 0)
+      else
+        ctx.lineTo(0, height)
+      ctx.stroke()
+      ctx.restore()
+
       @$el.show()
 
     else if @mget("render_mode") == "canvas"
