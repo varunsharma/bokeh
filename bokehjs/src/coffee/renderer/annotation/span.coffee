@@ -12,6 +12,7 @@ class SpanView extends PlotWidget
   initialize: (options) ->
     super(options)
     @line_props = new properties.Line({obj: @model, prefix: ''})
+    @ctx = fixup_context(@$el[0].getContext('2d'))
     @$el.appendTo(@plot_view.$el.find('div.bk-canvas-overlays'))
     @$el.css({position: 'absolute'})
     @$el.hide()
@@ -53,19 +54,17 @@ class SpanView extends PlotWidget
       zIndex: 1000
     })
 
-    ctx = fixup_context(@$el[0].getContext('2d'))
-
-    ctx.save()
-    ctx.clearRect(0, 0, width, height)
-    ctx.beginPath()
-    @line_props.set_value(ctx)
-    ctx.moveTo(0, 0)
+    @ctx.save()
+    @ctx.clearRect(0, 0, width, height)
+    @ctx.beginPath()
+    @line_props.set_value(@ctx)
+    @ctx.moveTo(0, 0)
     if dim == "width"
-      ctx.lineTo(width, 0)
+      @ctx.lineTo(width, 0)
     else
-      ctx.lineTo(0, height)
-    ctx.stroke()
-    ctx.restore()
+      @ctx.lineTo(0, height)
+    @ctx.stroke()
+    @ctx.restore()
 
     @$el.show()
 
