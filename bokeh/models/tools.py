@@ -233,7 +233,7 @@ class CrosshairTool(Tool):
 
     """)
 
-    line_dash = DashPattern(help="""
+    line_dash = DashPattern("dashed", help="""
     How should the line be dashed.
     """)
 
