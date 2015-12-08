@@ -45,7 +45,6 @@ class CrosshairTool extends InspectTool.Model
     @set('spans', {
       width: new Span.Model({
         dimension: "width"
-        render_mode: @get("render_mode")
         location_units: @get("location_units")
         line_color: @get("line_color")
         line_width: @get('line_width')
@@ -55,7 +54,6 @@ class CrosshairTool extends InspectTool.Model
       }),
       height: new Span.Model({
         dimension: "height"
-        render_mode: @get("render_mode")
         location_units: @get("location_units")
         line_color: @get("line_color")
         line_width: @get('line_width')
@@ -71,13 +69,12 @@ class CrosshairTool extends InspectTool.Model
     @get('plot').set('renderers', renderers)
 
   nonserializable_attribute_names: () ->
-    super().concat(['location_units', 'render_mode', 'spans'])
+    super().concat(['location_units', 'spans'])
 
   defaults: () ->
     return _.extend({}, super(), {
       dimensions: ["width", "height"]
       location_units: "screen"
-      render_mode: "css",
       line_color: 'black',
       line_width: 1,
       line_alpha: 1.0

@@ -129,7 +129,6 @@ def test_Span():
     assert line.x_range_name == 'default'
     assert line.y_range_name == 'default'
     assert line.level == 'annotation'
-    assert line.render_mode == 'canvas'
     yield check_line, line, 'black', 1.0
     yield (check_props, line, [
         "plot",
@@ -139,5 +138,4 @@ def test_Span():
         "x_range_name",
         "y_range_name",
         "level",
-        "render_mode"
     ], LINE)

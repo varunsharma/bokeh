@@ -17,12 +17,9 @@ class SpanView extends PlotWidget
     @$el.hide()
 
   bind_bokeh_events: () ->
-    @listenTo(@model, 'change:location', @_draw_span)
+    @listenTo(@model, 'change:location', () => @render())
 
   render: () ->
-    @_draw_span()
-
-  _draw_span: () ->
     if not @mget('location')?
       @$el.hide()
       return
@@ -44,49 +41,33 @@ class SpanView extends PlotWidget
       width = @mget('line_width')
       height = frame.get('height')
 
-    if @mget("render_mode") == "css"
-      @$el.attr({
-        width: width
-        height: height
-      })
-      @$el.css({
-        top: stop
-        left: sleft
-        width: "#{width}px"
-        height: "#{height}px"
-        zIndex: 1000
-      })
+    @$el.attr({
+      width: width
+      height: height
+    })
+    @$el.css({
+      top: stop
+      left: sleft
+      width: "#{width}px"
+      height: "#{height}px"
+      zIndex: 1000
+    })
 
-      ctx = fixup_context(@$el[0].getContext('2d'))
+    ctx = fixup_context(@$el[0].getContext('2d'))
 
-      ctx.save()
-      ctx.clearRect(0, 0, width, height)
-      ctx.beginPath()
-      @line_props.set_value(ctx)
-      ctx.moveTo(0, 0)
-      if dim == "width"
-        ctx.lineTo(width, 0)
-      else
-        ctx.lineTo(0, height)
-      ctx.stroke()
-      ctx.restore()
+    ctx.save()
+    ctx.clearRect(0, 0, width, height)
+    ctx.beginPath()
+    @line_props.set_value(ctx)
+    ctx.moveTo(0, 0)
+    if dim == "width"
+      ctx.lineTo(width, 0)
+    else
+      ctx.lineTo(0, height)
+    ctx.stroke()
+    ctx.restore()
 
-      @$el.show()
-
-    else if @mget("render_mode") == "canvas"
-      ctx = @plot_view.canvas_view.ctx
-      ctx.save()
-
-      ctx.beginPath()
-      @line_props.set_value(ctx)
-      ctx.moveTo(sleft, stop)
-      if @mget('dimension') == "width"
-        ctx.lineTo(sleft + width, stop)
-      else
-        ctx.lineTo(sleft, stop + height)
-      ctx.stroke()
-
-      ctx.restore()
+    @$el.show()
 
   _calc_dim: (location, mapper) ->
       if @mget('location_units') == 'data'
@@ -103,7 +84,6 @@ class Span extends HasParent
     return _.extend {}, super(), {
       x_range_name: "default"
       y_range_name: "default"
-      render_mode: "canvas"
       location_units: "data"
     }
 
