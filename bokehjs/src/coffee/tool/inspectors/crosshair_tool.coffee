@@ -9,17 +9,16 @@ class CrosshairToolView extends InspectTool.View
       return
     frame = @plot_model.get('frame')
     canvas = @plot_model.get('canvas')
+
     vx = canvas.sx_to_vx(e.bokeh.sx)
     vy = canvas.sy_to_vy(e.bokeh.sy)
+
     for dim in @mget('dimensions')
       span = @mget('spans')[dim]
       if not frame.contains(vx, vy)
         span.unset('location')
       else
-        if dim == "width"
-          span.set('location', vy)
-        else
-          span.set('location', vx)
+        span.set('location', if dim == "width" then vy else vx)
 
   _move_exit: (e)->
     for dim in @mget('dimensions')
