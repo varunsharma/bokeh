@@ -21,7 +21,7 @@ from warnings import warn
 from six import string_types
 
 from .core.templates import (
-    AUTOLOAD_JS, AUTOLOAD_TAG, FILE,
+    AUTOLOAD_JS, AUTOLOAD_TAG, BOOTSTRAP_JS, FILE,
     NOTEBOOK_DIV, PLOT_DIV, DOC_JS, SCRIPT_TAG
 )
 from .core.json_encoder import serialize_json
@@ -345,10 +345,13 @@ def autoload_static(model, resources, script_path):
         if 'docid' in item:
             doc_id = item['docid']
 
+        bootstrap_js = BOOTSTRAP_JS.render(
+            js_urls = resources.js_files,
+            css_files = resources.css_files
+        )
         js = AUTOLOAD_JS.render(
             docs_json = serialize_json(docs_json),
-            js_urls = resources.js_files,
-            css_files = resources.css_files,
+            bootstrap_js = bootstrap_js,
             elementid = item['elementid'],
             websocket_url = None
         )
