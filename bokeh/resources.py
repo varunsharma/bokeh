@@ -467,7 +467,7 @@ class JSResources(BaseResources):
         return self._plugin_template % dict(exports=exports, models=models)
 
     def render_js(self):
-        bootstrap_js = BOOTSTRAP_JS.render(self.js_files, [])
+        bootstrap_js = BOOTSTRAP_JS.render(js_urls=self.js_files, css_files=[])
         return JS_RESOURCES.render(bootstrap_js=bootstrap_js, js_raw=self.js_raw)
 
 class CSSResources(BaseResources):

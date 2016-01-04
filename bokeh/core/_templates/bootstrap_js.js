@@ -18,7 +18,11 @@ be defined.
   }
   if (typeof(window.bokeh_load) === 'undefined') {
     window.bokeh_load = function(callback) {
+      {% if js_urls -%}
       var js_urls = {{ js_urls }};
+      {%- else %}
+      var js_urls = [];
+      {%- endif %}
       // in the INLINE case, js_urls has zero length
       if (js_urls.length === 0 ||
           (typeof(window._bokeh_is_loading) !== undefined && window._bokeh_is_loading == 0)) {
