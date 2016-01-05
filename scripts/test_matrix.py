@@ -67,7 +67,7 @@ PIP_UPGRADE = "pip install --upgrade --pre -i https://pypi.anaconda.org/bokeh/ch
 CONDA_INSTALL = "conda install --yes -c bokeh/channel/dev bokeh"
 CONDA_UPDATE = "conda update --yes -c bokeh/channel/dev bokeh"
 
-TEST_INSTALL = "conda install --yes -c bokeh nose mock beautiful-soup ipython scipy flexx"
+TEST_INSTALL = "conda install --yes -c bokeh nose mock beautiful-soup ipython scipy flexx pandas"
 
 def conda(pyver, ver=None):
     if ver:
