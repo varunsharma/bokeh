@@ -61,6 +61,39 @@ def bokeh_installer(env_name, install_string):
     return result == 0
 
 
+PIP_INSTALL = "pip install --pre -i https://pypi.anaconda.org/bokeh/channel/dev/simple bokeh --extra-index-url https://pypi.python.org/simple/"
+PIP_UPGRADE = "pip install --upgrade --pre -i https://pypi.anaconda.org/bokeh/channel/dev/simple bokeh --extra-index-url https://pypi.python.org/simple/"
+
+CONDA_INSTALL = "conda install --yes -c bokeh/channel/dev bokeh"
+CONDA_UPDATE = "conda update --yes -c bokeh/channel/dev bokeh"
+
+TEST_INSTALL = "conda install --yes -c bokeh nose mock beautiful-soup ipython scipy"
+
+def conda(pyver, ver=None):
+    if ver:
+        return {
+            "init"    : "python=%s pytest nose mock bokeh=%s" % (pyver, ver),
+            "install" : '; '.join([TEST_INSTALL, CONDA_UPDATE])
+        }
+    else:
+        return {
+            "init"    : "python=%s pytest mock" % pyver,
+            "install" : '; '.join([TEST_INSTALL, CONDA_INSTALL])
+        }
+
+def pip(pyver, ver=None):
+    if ver:
+        return {
+            "init"    : "python=%s pip pytest nose mock bokeh=%s" % (pyver, ver),
+            "install" :  '; '.join([TEST_INSTALL, PIP_UPGRADE])
+        }
+    else:
+        return {
+            "init"    : "python=%s pytest mock pip" % pyver,
+            "install" : '; '.join([TEST_INSTALL, PIP_INSTALL])
+        }
+
+
 if __name__ == '__main__':
 
     parser = get_parser()
@@ -69,68 +102,21 @@ if __name__ == '__main__':
     ver = ops.version
 
     envs = {
-        "py27_conda_clean"    : {
-            "init"    : "python=2.7 pytest mock",
-            "install" : '; '.join([
-                    # install latest version from dev channel
-                    "conda install --yes -c bokeh/channel/dev bokeh",
-                    # install dependencies needed for testing
-                    "conda install --yes  -c jrderuiter pytest-cov",
-                    "conda install --yes  -c auto websocket-client",
-                    "conda install --yes  -c bokeh nose mock blaze abstract-rendering beautiful-soup ipython scipy websocket multiuserblazeserver pillow",
-                ])
-            },
-        "py27_conda_update"   : {
-            "init"    : "python=2.7 nose mock bokeh=%s" % ver,
-            "install" : '; '.join([
-                    "conda update --yes -c bokeh/channel/dev bokeh",
-                    # install dependencies needed for testing
-                    "conda install --yes -c auto websocket-client",
-                    "conda install --yes -c bokeh nose mock blaze abstract-rendering beautiful-soup ipython scipy websocket multiuserblazeserver pillow",
-                ])
-            },
-        "py27_pip_clean"      : {
-            "init"    : "python=2.7 pytest mock pip",
-            "install" : '; '.join([
-                # Latest version of pip not included in anaconda 2.3.0
-                "pip install --pre -i https://pypi.anaconda.org/bokeh/channel/dev/simple bokeh --extra-index-url https://pypi.python.org/simple/",
-                # install dependencies needed for testing
-                "conda install --yes  -c jrderuiter pytest-cov",
-                "conda install --yes -c auto websocket-client",
-                "conda install --yes -c bokeh nose mock blaze abstract-rendering beautiful-soup ipython scipy websocket-client multiuserblazeserver",
-                ])
-            },
-        "py27_pip_update"     : {
-            "init"    : "python=2.7 pip nose mock bokeh=%s" % ver,
-            "install" :  '; '.join([
-                # Latest version of pip not included in anaconda 2.3.0
-                "pip install --upgrade --pre -i https://pypi.anaconda.org/bokeh/channel/dev/simple bokeh --extra-index-url https://pypi.python.org/simple/",
-                # install dependencies needed for testing
-                "conda install --yes -c auto websocket-client",
-                "conda install --yes -c bokeh nose mock blaze abstract-rendering beautiful-soup ipython scipy multiuserblazeserver",
-                ])
-            },
-        "py34_pip_clean"      : {
-            "init"    : "python=3.4 pytest mock pip",
-            "install" : '; '.join([
-                # Latest version of pip not included in anaconda 2.3.0
-                "pip install --pre -i https://pypi.anaconda.org/bokeh/channel/dev/simple bokeh --extra-index-url https://pypi.python.org/simple/",
-                # install dependencies needed for testing
-                "conda install --yes  -c jrderuiter pytest-cov",
-                "conda install --yes -c bokeh nose mock blaze abstract-rendering beautiful-soup ipython scipy multiuserblazeserver",
-                ])
-            },
-        "py34_pip_update"     : {
-            "init"    : "python=3.4 pip nose mock bokeh=%s" % ver,
-            "install" :  '; '.join([
-                # Latest version of pip not included in anaconda 2.3.0
-                "pip install --upgrade --pre -i https://pypi.anaconda.org/bokeh/channel/dev/simple bokeh --extra-index-url https://pypi.python.org/simple/",
-                # install dependencies needed for testing
-                "conda install --yes -c bokeh nose mock blaze abstract-rendering beautiful-soup ipython scipy multiuserblazeserver",
-                ])
-            },
-    }
+        "py27_conda_clean"  : conda("2.7"),
+        "py27_conda_update" : conda("2.7", ver),
+        "py27_pip_clean"    : pip("2.7"),
+        "py27_pip_update"   : pip("2.7", ver),
 
+        "py34_conda_clean"  : conda("3.4"),
+        "py34_conda_update" : conda("3.4", ver),
+        "py34_pip_clean"    : pip("3.4"),
+        "py34_pip_update"   : pip("3.4", ver),
+
+        "py35_conda_clean"  : conda("3.5"),
+        "py35_conda_update" : conda("3.5", ver),
+        "py35_pip_clean"    : pip("3.5"),
+        "py35_pip_update"   : pip("3.5", ver),
+    }
 
     # Use this method rather than os.path.expanduser('~/anaconda') to provide
     # miniconda support
