@@ -67,30 +67,34 @@ PIP_UPGRADE = "pip install --upgrade --pre -i https://pypi.anaconda.org/bokeh/ch
 CONDA_INSTALL = "conda install --yes -c bokeh/channel/dev bokeh"
 CONDA_UPDATE = "conda update --yes -c bokeh/channel/dev bokeh"
 
-TEST_INSTALL = "conda install --yes -c bokeh nose mock beautiful-soup ipython scipy flexx pandas"
+TEST_INSTALL = {
+    "2.7": "conda install --yes -c bokeh nose mock ipython scipy pandas numba beautiful-soup",
+    "3.4": "conda install --yes -c bokeh nose mock ipython scipy pandas numba beautiful-soup flexx",
+    "3.5": "conda install --yes -c bokeh nose mock ipython scipy pandas numba beautifulsoup4 flexx",
+}
 
 def conda(pyver, ver=None):
     if ver:
         return {
             "init"    : "python=%s pytest nose mock bokeh=%s" % (pyver, ver),
-            "install" : '; '.join([TEST_INSTALL, CONDA_UPDATE])
+            "install" : '; '.join([TEST_INSTALL[pyver], CONDA_UPDATE])
         }
     else:
         return {
             "init"    : "python=%s pytest mock" % pyver,
-            "install" : '; '.join([TEST_INSTALL, CONDA_INSTALL])
+            "install" : '; '.join([TEST_INSTALL[pyver], CONDA_INSTALL])
         }
 
 def pip(pyver, ver=None):
     if ver:
         return {
             "init"    : "python=%s pip pytest nose mock bokeh=%s" % (pyver, ver),
-            "install" :  '; '.join([TEST_INSTALL, PIP_UPGRADE])
+            "install" :  '; '.join([TEST_INSTALL[pyver], PIP_UPGRADE])
         }
     else:
         return {
             "init"    : "python=%s pytest mock pip" % pyver,
-            "install" : '; '.join([TEST_INSTALL, PIP_INSTALL])
+            "install" : '; '.join([TEST_INSTALL[pyver], PIP_INSTALL])
         }
 
 
