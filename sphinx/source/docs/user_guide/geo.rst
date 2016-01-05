@@ -21,18 +21,24 @@ Bokeh's ``GeoJSONDataSource`` can be used almost seamlessly in place of Bokeh's
 
 .. bokeh-plot::
     :source-position: above
-
     from bokeh.io import output_file, show
-    from bokeh.models import GeoJSONDataSource
+    from bokeh.models import GeoJSONDataSource, HoverTool
     from bokeh.plotting import figure
     from bokeh.sampledata.sample_geojson import geojson
 
-    geo_source = GeoJSONDataSource(geojson=geojson)
-
     p = figure()
-    p.circle(alpha=0.9, source=geo_source)
-    output_file("geojson.html")
+
+    p.circle(x='x', y='y', line_color=None, fill_alpha=0.8, size=20,
+             source=GeoJSONDataSource(geojson=geojson))
+
+    p.add_tools(HoverTool(tooltips=[(
+        "Organisation Name", "@OrganisationName"
+    )]))
+
+    output_file("geojson_points.html", title="GeoJSON Points")
+
     show(p)
+
 
 The important thing to know is that behind the scenes, Bokeh converts the
 GeoJSON coordinates into columns called `x` and `y` (`z` where appropriate)
