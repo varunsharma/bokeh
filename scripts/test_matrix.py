@@ -61,9 +61,9 @@ CONDA_INSTALL = "conda install --yes -c bokeh/channel/dev bokeh"
 CONDA_UPDATE = "conda update --yes -c bokeh/channel/dev bokeh"
 
 TEST_INSTALL = {
-    "2.7": "conda install --yes -c bokeh nose mock ipython scipy pandas numba scikit-learn beautiful-soup",
-    "3.4": "conda install --yes -c bokeh nose mock ipython scipy pandas numba scikit-learn beautiful-soup flexx",
-    "3.5": "conda install --yes -c bokeh nose mock ipython scipy pandas numba scikit-learn beautifulsoup4 flexx",
+    "2.7": "conda install --yes -c bokeh nose mock ipython scipy pandas numba flask scikit-learn notebook matplotlib ggplot seaborn beautiful-soup",
+    "3.4": "conda install --yes -c bokeh nose mock ipython scipy pandas numba flask scikit-learn notebook matplotlib ggplot seaborn beautiful-soup flexx",
+    "3.5": "conda install --yes -c bokeh nose mock ipython scipy pandas numba flask scikit-learn notebook matplotlib ggplot seaborn beautifulsoup4 flexx",
 }
 
 def conda(pyver, ver=None):
