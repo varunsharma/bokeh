@@ -8,41 +8,34 @@ import textwrap
 
 
 def get_parser():
-    """Create the parser that will be used to add arguments to the script.
-    """
+    """Create the parser that will be used to add arguments to the script. """
 
     parser = argparse.ArgumentParser(description=textwrap.dedent("""
-                    Creates conda environments for a given
-                    version of bokeh, installed using pip and
-                    conda and including python 2.7 and python 3.4.
+        Creates conda environments for a given version of bokeh, installed
+        using pip and conda and including python 2.7, 3.4 and 3.5.
 
-                    The --version ('-v') option takes an earlier version of
-                    bokeh, for use in creating environments where bokeh will be
-                    updated.
+        The --version ('-v') option takes an earlier version of Bokeh
+        bokeh, for use in creating environments where bokeh will be updated.
 
+        Example:
 
-                    Ex: ' python test_matrix.py -v 0.7.0'
-                    """), formatter_class=argparse.RawTextHelpFormatter)
+            python test_matrix.py -v 0.10.0
+
+    """), formatter_class=argparse.RawTextHelpFormatter)
 
     parser.add_argument('-v', '--version', action='store', default=False,
-                        help='Version of bokeh', required=True)
-    # parser.add_argument('')
-
+                        help='previous version of bokeh', required=True)
     return parser
 
 
 def cleaner(env_path):
-    """Checks that an environment path exists and, if so, deletes it.
-    """
-
+    """Checks that an environment path exists and, if so, deletes it. """
     if os.path.exists(env_path):
         shutil.rmtree(env_path)
 
 
 def conda_creator(env_name, pkgs):
-    """Create a conda environment of a given name containing a given string of pkgs.
-    """
-
+    """Create a conda environment of a given name containing a given string of pkgs. """
     subprocess.call("conda create --yes -n %s %s" % (env_name, pkgs), shell=True)
 
 
@@ -122,30 +115,23 @@ if __name__ == '__main__':
         "py35_pip_update"   : pip("3.5", ver),
     }
 
-    # Use this method rather than os.path.expanduser('~/anaconda') to provide
-    # miniconda support
+    # Use this method to provide miniconda support
     root = subprocess.check_output(['conda', 'info', '--root']).rstrip()
 
-    # Python3 will return a byte string on the above line, so it must be
-    # decoded to utf-8 before we can pass it to os.path.join
+    # decode for py3
     root = root.decode()
 
+    fails = []
     for environment in envs:
-        successful_install = True
-        fails = []
         cleaner(os.path.join(root, "envs", environment))
-        print()
-        print("CREATING NEW ENV", environment)
+        print("\nCREATING NEW ENV", environment)
         conda_creator(environment, envs[environment]["init"])
-
         install = bokeh_installer(environment, envs[environment]["install"])
         if not install:
             fails.append(environment)
-            successful_install = False
 
-    print()
-    print("*********************")
-    if successful_install:
+    print("\n*********************")
+    if len(fails) == 0:
         print("All environments have been installed!  See below for their names.\n")
         for environment in envs:
             print(environment)
