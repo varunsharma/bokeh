@@ -51,7 +51,7 @@ class CompositeGlyph(HasProps):
         glyph renderers. Simple glyphs part of the composite glyph might not use the
         column data source.""")
     renderers = List(Instance(GlyphRenderer))
-    glyphs = Dict(String, Any) # where we expect a Glyph class as Value
+    glyphs = Dict(String, Instance(Glyph), help="""Register the glyph renderers.""")
 
     operations = List(Any, help="""A list of chart operations that can be applied to
         manipulate their visual depiction.""")
@@ -128,6 +128,21 @@ class CompositeGlyph(HasProps):
         else:
             return data
 
+    @classmethod
+    def generate_glyphs(cls):
+        return {}
+
+    @classmethod
+    def generate_renderers(cls):
+        glyphs = cls.generate_glyphs()
+        source = ColumnDataSource()
+
+        renderers = {}
+        for glyph_name, glyph in glyphs:
+            renderers[glyph_name] = GlyphRenderer(data_source=source, glyph=glyph)
+
+        return renderers
+
     def build_renderers(self):
         raise NotImplementedError('You must return list of renderers.')
 
@@ -165,11 +180,8 @@ class CompositeGlyph(HasProps):
 
     @classmethod
     def glyph_properties(cls):
-        props = {}
         for name, glyph in iteritems(cls.glyphs):
-            props[name] = glyph.class_properties(withbases=True)
-
-        return props
+            yield name, glyph.properties(True)
 
 
 class CollisionModifier(HasProps):
