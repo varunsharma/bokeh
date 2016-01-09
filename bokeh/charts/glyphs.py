@@ -579,6 +579,8 @@ class Interval(AggregateGlyph):
     start = Float(default=0.0)
     end = Float()
 
+    glyphs = {'rect': Rect}
+
     def __init__(self, label, values, **kwargs):
 
         kwargs['label'] = label
@@ -684,11 +686,16 @@ class Interval(AggregateGlyph):
         """The value associated with the end of the stacked glyph."""
         return self.stack_shift + self.span + self.start
 
+    @classmethod
+    def generate_glyphs(cls):
+        yield 'rect', Rect(x='x', y='y', width='width', height='height',
+                           fill_color='color', fill_alpha='fill_alpha',
+                           line_color='line_color')
+
     def build_renderers(self):
         """Yields a `GlyphRenderer` associated with a `Rect` glyph."""
-        glyph = Rect(x='x', y='y', width='width', height='height', fill_color='color',
-                     fill_alpha='fill_alpha', line_color='line_color')
-        yield GlyphRenderer(glyph=glyph)
+        for name, glyph in self.generate_glyphs():
+            yield GlyphRenderer(glyph=glyph)
 
 
 class BarGlyph(Interval):
