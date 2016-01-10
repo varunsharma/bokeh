@@ -115,6 +115,10 @@ class PointGlyph(XyGlyph):
     marker = String(default='circle')
     size = Float(default=8)
 
+    glyphs = marker_types
+
+    _attrs = ['line_color', 'fill_color', 'size', 'fill_alpha', 'line_alpha']
+
     def __init__(self, x=None, y=None, color=None, line_color=None, fill_color=None,
                  marker=None, size=None, **kwargs):
         kwargs['x'] = x
@@ -129,20 +133,32 @@ class PointGlyph(XyGlyph):
         kwargs['line_color'] = line_color
         kwargs['fill_color'] = fill_color
 
+        # glyphs = kwargs.get('glyphs')
+        # if glyphs is None:
+        #     glyphs = {marker_name: marker() for marker_name, marker in
+        #               iteritems(marker_types)}
+        #     kwargs['glyphs'] = glyphs
+
         super(PointGlyph, self).__init__(**kwargs)
         self.setup()
+
+    def build_source(self):
+        data = super(PointGlyph, self).build_source()
+        n_rows = len(data['x_values'])
+
+        # add constant attribute columns for length of x_values
+        for attr in self._attrs:
+            data[attr] = n_rows * [getattr(self, attr)]
+
+        return data
 
     def get_glyph(self):
         return marker_types[self.marker]
 
     def build_renderers(self):
         glyph_type = self.get_glyph()
-        glyph = glyph_type(x='x_values', y='y_values',
-                           line_color=self.line_color,
-                           fill_color=self.fill_color,
-                           size=self.size,
-                           fill_alpha=self.fill_alpha,
-                           line_alpha=self.line_alpha)
+        attr_kwargs = {attr: attr for attr in self._attrs}
+        glyph = glyph_type(x='x_values', y='y_values', **attr_kwargs)
         yield GlyphRenderer(glyph=glyph)
 
 

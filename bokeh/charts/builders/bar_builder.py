@@ -76,7 +76,7 @@ class BarBuilder(Builder):
     fill_alpha = Float(default=0.8)
 
     glyph = BarGlyph
-    comp_glyph_types = Override(default=[BarGlyph])
+    comp_glyph_types = [BarGlyph]
     label_attributes = ['stack', 'group']
 
     label_only = Bool(False)
@@ -147,7 +147,7 @@ class BarBuilder(Builder):
 
             x_labels.append(str(item))
 
-        self.x_range = FactorRange(factors=x_labels)
+        self.x_range = x_labels
 
         y_shift = abs(0.1 * ((self.min_height + self.max_height) / 2))
 
@@ -161,7 +161,7 @@ class BarBuilder(Builder):
         else:
             end = 0.0
 
-        self.y_range = Range1d(start=start, end=end)
+        self.y_range = [start, end]
 
     def get_extra_args(self):
         if self.__class__ is not BarBuilder:
@@ -175,6 +175,16 @@ class BarBuilder(Builder):
 
         Takes reference points from data loaded at the ColumnDataSource.
         """
+
+        self.update_renderers()
+        # for renderer in self.comp_glyphs:
+        #     for sub_renderer in renderer.renderers:
+        #         yield sub_renderer
+
+        for renderer in list(self.renderers.values()):
+            yield renderer
+
+    def update_renderers(self):
         kwargs = self.get_extra_args()
         attrs = self.collect_attr_kwargs()
 
@@ -210,14 +220,17 @@ class BarBuilder(Builder):
         Stack().apply(self.comp_glyphs)
         Dodge().apply(self.comp_glyphs)
 
+        data = []
+        import pandas as pd
+        for comp_glyph in self.comp_glyphs:
+            data.append(pd.DataFrame(comp_glyph.source.data))
+        data = pd.concat(data)
+        data = ColumnDataSource(data)
+        self.renderers['rect'].data_source.data = data.data
+
         # a higher level function of bar chart is to keep track of max height of all bars
         self.max_height = max([renderer.y_max for renderer in self.comp_glyphs])
         self.min_height = min([renderer.y_min for renderer in self.comp_glyphs])
-
-        for renderer in self.comp_glyphs:
-            for sub_renderer in renderer.renderers:
-                yield sub_renderer
-
 
 @help(BarBuilder)
 def Bar(data, label=None, values=None, color=None, stack=None, group=None, agg="sum",

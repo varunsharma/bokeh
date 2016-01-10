@@ -27,9 +27,12 @@ from .utils import collect_attribute_columns, label_from_index_dict, build_hover
 from .data_source import OrderedAssigner
 from ..models.ranges import Range, Range1d, FactorRange
 from ..models.sources import ColumnDataSource
+from ..models.renderers import GlyphRenderer
 from ..core.properties import (HasProps, Instance, List, String, Dict,
-                          Color, Bool, Tuple, Either)
+                          Color, Bool, Tuple, Either, Float)
 from ..io import curdoc, curstate
+
+from six import iteritems
 #-----------------------------------------------------------------------------
 # Classes and functions
 #-----------------------------------------------------------------------------
@@ -47,6 +50,8 @@ def create_and_build(builder_class, *data, **kws):
     if getattr(builder_class, 'default_attributes') is None:
         raise NotImplementedError('Each builder must specify its default_attributes, %s does not.' % builder_class.__name__)
 
+    chart = kws.pop('chart', None)
+
     builder_props = set(builder_class.properties())
 
     # append dimensions to the builder props
@@ -57,19 +62,32 @@ def create_and_build(builder_class, *data, **kws):
     for attr_name in builder_class.default_attributes.keys():
         builder_props.add(attr_name)
 
-    # create the new builder
     builder_kws = {k: v for k, v in kws.items() if k in builder_props}
-    builder = builder_class(*data, **builder_kws)
 
     # create a chart to return, since there isn't one already
     chart_kws = { k:v for k,v in kws.items() if k not in builder_props}
-    chart = Chart(**chart_kws)
-    chart.add_builder(builder)
-    chart.start_plot()
 
-    curdoc()._current_plot = chart # TODO (havocp) store this on state, not doc?
-    if curstate().autoadd:
-        curdoc().add_root(chart)
+    if chart is None:
+
+        # create the new builder
+        builder = builder_class(*data, **builder_kws)
+
+        chart = Chart(**chart_kws)
+        chart.add_builder(builder)
+        chart.start_plot()
+        curdoc()._current_plot = chart  # TODO (havocp) store this on state, not doc?
+
+        if curstate().autoadd:
+            curdoc().add_root(chart)
+
+    else:
+        chart.update(**chart_kws)
+        for builder in chart._builders:
+            builder.update(*data, **builder_kws)
+            builder.add_chart_props(chart)
+        #chart.set_ranges()
+        chart.start_plot()
+
 
     return chart
 
@@ -108,8 +126,8 @@ class Builder(HasProps):
     """
 
     # Optional Inputs
-    x_range = Instance(Range)
-    y_range = Instance(Range)
+    x_range = Either(List(String), List(Float), Instance(Range))
+    y_range = Either(List(String), List(Float), Instance(Range))
 
     xlabel = String()
     ylabel = String()
@@ -208,7 +226,7 @@ class Builder(HasProps):
     """
     column_selector = OrderedAssigner
 
-    comp_glyph_types = List(Instance(CompositeGlyph))
+    comp_glyph_types = [] #List(Instance(CompositeGlyph))
 
     sort_dim = Dict(String, Bool, default={})
 
@@ -229,6 +247,12 @@ class Builder(HasProps):
         column specified (list(str)), or by explicit specification of the tooltips
         using the valid input for the `HoverTool` tooltips kwarg.
         """)
+
+    renderers = Dict(String, Instance(GlyphRenderer), default=None, help="""
+        Stores reference to a common set of GlyphRenderers with ColumnDataSources,
+        which covers all possible glyph types that the Builder might utilize.
+        """)
+
 
     def __init__(self, *args, **kws):
         """Common arguments to be used by all the inherited classes.
@@ -254,6 +278,24 @@ class Builder(HasProps):
             attr (list(AttrSpec)): to be filled with the new attributes created after
                 loading the data dict.
         """
+
+        data, kws = self._setup_builder_kws(*args, **kws)
+        super(Builder, self).__init__(**kws)
+        self._setup_builder_props()
+        self._data = data
+        self._legends = []
+
+    def _setup_builder_props(self):
+        if self.renderers is None:
+            renderers = {}
+            for comp_glyph in self.comp_glyph_types:
+                renderers.update(comp_glyph.generate_renderers())
+            self.renderers = renderers
+
+        # collect unique columns used for attributes
+        self.attribute_columns = collect_attribute_columns(**self.attributes)
+
+    def _setup_builder_kws(self, *args, **kws):
         data = None
         if len(args) != 0 or len(kws) != 0:
 
@@ -288,13 +330,8 @@ class Builder(HasProps):
             attributes = dict()
 
         kws['attributes'] = attributes
-        super(Builder, self).__init__(**kws)
 
-        # collect unique columns used for attributes
-        self.attribute_columns = collect_attribute_columns(**self.attributes)
-
-        self._data = data
-        self._legends = []
+        return data, kws
 
     def _setup_attrs(self, data, kws):
         """Handle overridden attributes and initialize them with data.
@@ -380,6 +417,9 @@ class Builder(HasProps):
         """
         raise NotImplementedError('Subclasses of %s must implement _yield_renderers.' %
                                   self.__class__.__name__)
+
+    def update_renderers(self):
+        pass
 
     def set_ranges(self):
         """Calculate and set the x and y ranges.
@@ -517,6 +557,11 @@ class Builder(HasProps):
             chart = Chart()
         chart.add_renderers(self, renderers)
 
+        self.add_chart_props(chart)
+
+        return chart
+
+    def add_chart_props(self, chart):
         # handle ranges after renders, since ranges depend on aggregations
         # ToDo: should reconsider where this occurs
         self.set_ranges()
@@ -537,15 +582,37 @@ class Builder(HasProps):
                                             chart_cols=self.attribute_columns)
             chart.add_tooltips(tooltips)
 
-        return chart
+    def update(self, *data, **kwargs):
+        print(kwargs)
+
+        data, kws = self._setup_builder_kws(*data, **kwargs)
+        self._setup_builder_props()
+        self._data = data
+
+        super(Builder, self).update(**kws)
+
+        self.comp_glyphs = []
+
+        self.setup()
+        self.process_data()
+        self.update_renderers()
+
 
     @classmethod
     def generate_help(cls):
-        help_str = ''
-        for comp_glyph in cls.comp_glyph_types:
-            help_str += str(comp_glyph.glyph_properties())
 
-        return help_str
+        yield cls.__name__
+        yield ''
+        yield 'Builder Properties'
+        yield ', '.join(list(cls.properties(True)))
+
+        for comp_glyph in cls.comp_glyphs:
+            yield comp_glyph.__name__
+
+            for glyph, props in comp_glyph.glyph_properties():
+                yield glyph.title()
+                yield ', '.join(list(props))
+                yield ''
 
 
 class XYBuilder(Builder):

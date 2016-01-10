@@ -22,11 +22,54 @@ from bokeh.charts.builder import create_and_build, XYBuilder
 from bokeh.charts.glyphs import PointGlyph
 from bokeh.charts.attributes import MarkerAttr, ColorAttr
 
+from bokeh.charts.utils import help
+
+from bokeh.core.properties import Override
+
 #-----------------------------------------------------------------------------
 # Classes and functions
 #-----------------------------------------------------------------------------
+from build.lib.bokeh.core.properties import Override
 
 
+class ScatterBuilder(XYBuilder):
+    """This is the Scatter class and it is in charge of plotting
+    Scatter charts in an easy and intuitive way.
+
+    Essentially, we provide a way to ingest the data, make the proper
+    calculations and push the references into a source object.
+    We additionally make calculations for the ranges. And finally add
+    the needed glyphs (markers) taking the references from the source.
+
+    """
+
+    default_attributes = {'color': ColorAttr(),
+                          'marker': MarkerAttr()}
+
+    comp_glyphs = Override(default=[PointGlyph])
+
+    def yield_renderers(self):
+        """Use the marker glyphs to display the points.
+
+        Takes reference points from data loaded at the ColumnDataSource.
+        """
+
+        for group in self._data.groupby(**self.attributes):
+
+            glyph = PointGlyph(label=group.label,
+                               x=group.get_values(self.x.selection),
+                               y=group.get_values(self.y.selection),
+                               line_color=group['color'],
+                               fill_color=group['color'],
+                               marker=group['marker'])
+
+            self.add_glyph(group, glyph)
+
+            for renderer in glyph.renderers:
+                yield renderer
+
+
+@help(ScatterBuilder)
 def Scatter(data=None, x=None, y=None, **kws):
     """ Create a scatter chart using :class:`ScatterBuilder <bokeh.charts.builders.scatter_builder.ScatterBuilder>`
     to render the geometry from values.
@@ -61,38 +104,3 @@ def Scatter(data=None, x=None, y=None, **kws):
     kws['x'] = x
     kws['y'] = y
     return create_and_build(ScatterBuilder, data, **kws)
-
-
-class ScatterBuilder(XYBuilder):
-    """This is the Scatter class and it is in charge of plotting
-    Scatter charts in an easy and intuitive way.
-
-    Essentially, we provide a way to ingest the data, make the proper
-    calculations and push the references into a source object.
-    We additionally make calculations for the ranges. And finally add
-    the needed glyphs (markers) taking the references from the source.
-
-    """
-
-    default_attributes = {'color': ColorAttr(),
-                          'marker': MarkerAttr()}
-
-    def yield_renderers(self):
-        """Use the marker glyphs to display the points.
-
-        Takes reference points from data loaded at the ColumnDataSource.
-        """
-
-        for group in self._data.groupby(**self.attributes):
-
-            glyph = PointGlyph(label=group.label,
-                               x=group.get_values(self.x.selection),
-                               y=group.get_values(self.y.selection),
-                               line_color=group['color'],
-                               fill_color=group['color'],
-                               marker=group['marker'])
-
-            self.add_glyph(group, glyph)
-
-            for renderer in glyph.renderers:
-                yield renderer

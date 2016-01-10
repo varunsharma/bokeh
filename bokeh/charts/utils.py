@@ -324,11 +324,16 @@ class ChartHelp(object):
         self.builders = builders
 
     def __repr__(self):
+        import pprint
+        pp = pprint.PrettyPrinter()
+
+        print('')
         help_str = ''
         for builder in self.builders:
-            help_str += builder.generate_help()
+            for help in builder.generate_help():
+                print(help)
 
-        return help_str
+        return ''
 
 
 def help(*builders):

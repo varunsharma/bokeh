@@ -30,12 +30,12 @@ from ..document import Document
 from ..embed import file_html
 from ..models import (
     CategoricalAxis, DatetimeAxis, Grid, Legend, LinearAxis, Plot,
-    HoverTool, FactorRange
+    HoverTool, FactorRange, Axis, Range, Range1d
 )
 from ..plotting import DEFAULT_TOOLS
 from ..plotting.helpers import _process_tools_arg
 from ..core.properties import (Auto, Bool, Either, Enum, Int, Float,
-                          String, Tuple, Override)
+                          String, Tuple, Override, Instance, Dict)
 from ..resources import INLINE
 from ..util.browser import view
 from ..util.notebook import publish_display_data
@@ -46,6 +46,17 @@ from ..util.deprecate import deprecated
 #-----------------------------------------------------------------------------
 
 Scale = enumeration('linear', 'categorical', 'datetime')
+
+def create_axes(plot, dim):
+    attr = dim + '_range_name'
+    lin_kwargs = {attr: dim + '_lin_range', 'plot': plot}
+    cat_kwargs = {attr: dim + '_cat_range', 'plot': plot}
+
+    return {'linear': LinearAxis(**lin_kwargs),
+                'categorical': CategoricalAxis(**cat_kwargs),
+                'datetime': DatetimeAxis(**lin_kwargs)}
+
+RANGES_MAP = {'categorical': FactorRange, 'linear': Range1d}
 
 class ChartDefaults(object):
     def apply(self, chart):
@@ -78,11 +89,11 @@ class Chart(Plot):
     A location where the legend should draw itself.
     """)
 
-    xgrid = Bool(True, help="""
+    xgrid = Either(Bool, Instance(Grid), default=True, help="""
     Whether to draw an x-grid.
     """)
 
-    ygrid = Bool(True, help="""
+    ygrid = Either(Bool, Instance(Grid), default=True, help="""
     Whether to draw an y-grid.
     """)
 
@@ -116,6 +127,22 @@ class Chart(Plot):
 
     _defaults = defaults
 
+    _xaxis = None
+    _yaxis = None
+
+    xaxes = Dict(String, Instance(Axis), default=None)
+    yaxes = Dict(String, Instance(Axis), default=None)
+
+    grids = Dict(String, Instance(Grid))
+    x_cat_range = Instance(FactorRange, default=FactorRange())
+    y_cat_range = Instance(FactorRange, default=FactorRange())
+
+    x_lin_range = Instance(Range1d, default=Range1d())
+    y_lin_range = Instance(Range1d, default=Range1d())
+
+    xranges = Dict(String, Instance(Range), default=None)
+    yranges = Dict(String, Instance(Range), default=None)
+
     __deprecated_attributes__ = ('filename', 'server', 'notebook')
 
     def __init__(self, *args, **kwargs):
@@ -143,6 +170,37 @@ class Chart(Plot):
 
         self.create_tools(self._tools)
 
+        if self.xaxes is None:
+            self.xaxes = create_axes(self, 'x')
+
+            #self.renderers += list(self.xaxes.values())
+
+        if self.yaxes is None:
+            self.yaxes = create_axes(self, 'y')
+            #self.renderers += list(self.yaxes.values())
+
+        if self.xgrid:
+            self.grids['x'] = Grid(dimension=0)
+            self.add_layout(self.grids['x'])
+
+        if self.ygrid:
+            self.grids['y'] = Grid(dimension=1)
+            self.add_layout(self.grids['y'])
+
+        self.extra_x_ranges = {'x_cat_range': self.x_cat_range,
+                               'x_lin_range': self.x_lin_range}
+
+        self.extra_y_ranges = {'y_cat_range': self.y_cat_range,
+                               'y_lin_range': self.y_lin_range}
+
+
+
+    def _create_axes(self):
+        return {scale: axis_type(plot=self) for scale, axis_type in iteritems(AXES_MAP)}
+
+    def _create_ranges(self):
+        return {scale: range_type() for scale, range_type in iteritems(RANGES_MAP)}
+
     def add_renderers(self, builder, renderers):
         self.renderers += renderers
         self._renderer_map.extend({ r._id : builder for r in renderers })
@@ -165,19 +223,35 @@ class Chart(Plot):
 
     def _get_labels(self, dim):
         if not getattr(self, dim + 'label') and len(self._labels[dim]) > 0:
-            return self._labels[dim][0]
+            return self._labels[dim][-1]
         else:
             return getattr(self, dim + 'label')
 
-    def create_axes(self):
-        self._xaxis = self.make_axis('x', "below", self._scales['x'][0], self._get_labels('x'))
-        self._yaxis = self.make_axis('y', "left", self._scales['y'][0], self._get_labels('y'))
+    def set_axes(self):
+
+        renderers = []
+        for renderer in self.renderers:
+            if not isinstance(renderer, Axis):
+                renderers.append(renderer)
+        self.renderers = renderers
+
+        self._xaxis = self.get_axis('x', self._scales['x'][-1],
+                                    self._get_labels('x'))
+        self.below = [self._xaxis]
+        #self.add_layout(self._xaxis, 'below')
+        self.renderers.append(self._xaxis)
+
+        self._yaxis = self.get_axis('y', self._scales['y'][-1], self._get_labels('y'))
+        #self.add_layout(self._yaxis, 'left')
+        self.left = [self._yaxis]
+        #self.left = [self._yaxis]
+        self.renderers.append(self._yaxis)
+
 
     def create_grids(self, xgrid=True, ygrid=True):
-        if xgrid:
-            self.make_grid(0, self._xaxis.ticker)
-        if ygrid:
-            self.make_grid(1, self._yaxis.ticker)
+
+        self.make_grid(0, self._xaxis.ticker)
+        self.make_grid(1, self._yaxis.ticker)
 
     def create_tools(self, tools):
         """Create tools if given tools=True input.
@@ -200,8 +274,10 @@ class Chart(Plot):
     def start_plot(self):
         """Add the axis, grids and tools
         """
-        self.create_axes()
-        self.create_grids(self.xgrid, self.ygrid)
+
+        #self.set_ranges()
+        self.set_axes()
+        self.create_grids()
 
         # Add tools if supposed to
         if self.tools:
@@ -231,7 +307,7 @@ class Chart(Plot):
             legend = Legend(location=location, legends=legends)
             self.add_layout(legend)
 
-    def make_axis(self, dim, location, scale, label):
+    def get_axis(self, dim, scale, label):
         """Create linear, date or categorical axis depending on the location,
         scale and with the proper labels.
 
@@ -246,13 +322,7 @@ class Chart(Plot):
             axis: Axis instance
         """
 
-        # ToDo: revisit how to handle multiple ranges
-        # set the last range to the chart's range
-        if len(self._ranges[dim]) == 0:
-            raise ValueError('Ranges must be added to derive axis type.')
-
         data_range = self._ranges[dim][-1]
-        setattr(self, dim + '_range', data_range)
 
         if scale == "auto":
             if isinstance(data_range, FactorRange):
@@ -260,19 +330,40 @@ class Chart(Plot):
             else:
                 scale = 'linear'
 
-        if scale == "linear":
-            axis = LinearAxis(axis_label=label)
-        elif scale == "datetime":
-            axis = DatetimeAxis(axis_label=label)
-        elif scale == "categorical":
-            axis = CategoricalAxis(
-                major_label_orientation=np.pi / 4, axis_label=label
-            )
-        else:
-            axis = LinearAxis(axis_label=label)
+        axes = getattr(self, dim + 'axes')
+        ranges = getattr(self, dim + 'ranges')
 
-        self.add_layout(axis, location)
+        if scale == "linear":
+            axis = axes['linear']
+            range = getattr(self, dim + '_lin_range')
+            range.start = data_range[0]
+            range.end = data_range[1]
+        elif scale == "datetime":
+            axis = axes['datetime']
+            range = getattr(self, dim + '_lin_range')
+            range.start = data_range[0]
+            range.end = data_range[1]
+        elif scale == "categorical":
+            axis = axes['categorical']
+            axis.major_label_orientation = np.pi / 4
+            range = getattr(self, dim + '_cat_range')
+            range.factors = data_range
+        else:
+            axis = axes['linear']
+            range = getattr(self, dim + '_lin_range')
+            range.start = data_range[0]
+            range.end = data_range[1]
+
+        axis.axis_label = label
+
+        setattr(self, dim + '_range', range)
+
         return axis
+
+    def set_ranges(self):
+        for dim in list(self._ranges.keys()):
+            data_range = self._ranges[dim][-1]
+            setattr(self, dim + '_range', data_range)
 
     def make_grid(self, dimension, ticker):
         """Create the grid just passing the axis and dimension.
@@ -284,12 +375,15 @@ class Chart(Plot):
         Return:
             grid: Grid instance
         """
+        if dimension == 0:
+            dim = 'x'
+        else:
+            dim = 'y'
 
-        grid = Grid(dimension=dimension, ticker=ticker)
-        self.add_layout(grid)
-
-        return grid
-
+        grid = getattr(self, dim + 'grid')
+        if grid:
+            pass
+            self.grids[dim].ticker = ticker
 
     @property
     def filename(self):
