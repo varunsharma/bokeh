@@ -21,13 +21,10 @@ the generation of several outputs (file, server, notebook).
 from __future__ import absolute_import
 
 import warnings
-from six import iteritems
 from collections import defaultdict
 import numpy as np
 
 from ..core.enums import enumeration, LegendLocation
-from ..document import Document
-from ..embed import file_html
 from ..models import (
     CategoricalAxis, DatetimeAxis, Grid, Legend, LinearAxis, Plot,
     HoverTool, FactorRange, Axis, Range, Range1d
@@ -35,10 +32,8 @@ from ..models import (
 from ..plotting import DEFAULT_TOOLS
 from ..plotting.helpers import _process_tools_arg
 from ..core.properties import (Auto, Bool, Either, Enum, Int, Float,
-                          String, Tuple, Override, Instance, Dict)
-from ..resources import INLINE
-from ..util.browser import view
-from ..util.notebook import publish_display_data
+                               String, Tuple, Override, Instance, Dict)
+
 from ..util.deprecate import deprecated
 
 #-----------------------------------------------------------------------------
