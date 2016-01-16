@@ -75,6 +75,7 @@ def create_and_build(builder_class, *data, **kws):
         chart = Chart(**chart_kws)
         chart.add_builder(builder)
         chart.start_plot()
+
         curdoc()._current_plot = chart  # TODO (havocp) store this on state, not doc?
 
         if curstate().autoadd:
@@ -87,7 +88,6 @@ def create_and_build(builder_class, *data, **kws):
             builder.add_chart_props(chart)
         #chart.set_ranges()
         chart.start_plot()
-
 
     return chart
 
@@ -129,8 +129,9 @@ class Builder(HasProps):
     x_range = Either(List(String), List(Float), Instance(Range))
     y_range = Either(List(String), List(Float), Instance(Range))
 
-    xlabel = String()
-    ylabel = String()
+    # Private labels that Chart may override
+    _xlabel = String()
+    _ylabel = String()
 
     xscale = String()
     yscale = String()
@@ -571,8 +572,8 @@ class Builder(HasProps):
         # always contribute legends, let Chart sort it out
         chart.add_legend(self._legends)
 
-        chart.add_labels('x', self.xlabel)
-        chart.add_labels('y', self.ylabel)
+        chart.add_labels('x', self._xlabel)
+        chart.add_labels('y', self._ylabel)
 
         chart.add_scales('x', self.xscale)
         chart.add_scales('y', self.yscale)
@@ -642,23 +643,23 @@ class XYBuilder(Builder):
         starty = extents['y_min']
         self.y_range = self._get_range('y', starty, endy)
 
-        if self.xlabel is None:
+        if self._xlabel is None:
             if self.x.selection is not None:
                 select = self.x.selection
                 if not isinstance(select, list):
                     select = [select]
             else:
                 select = ['']
-            self.xlabel = ', '.join(select)
+            self._xlabel = ', '.join(select)
 
-        if self.ylabel is None:
+        if self._ylabel is None:
             if self.y.selection is not None:
                 select = self.y.selection
                 if not isinstance(select, list):
                     select = [select]
             else:
                 select = ['']
-            self.ylabel = ', '.join(select)
+            self._ylabel = ', '.join(select)
 
         # sort the legend if we are told to
         if len(self.sort_legend) > 0:

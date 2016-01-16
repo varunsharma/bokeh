@@ -3,6 +3,7 @@ from __future__ import absolute_import
 from six import iteritems
 
 from bokeh.models.renderers import GlyphRenderer
+from bokeh.models import Glyph
 from bokeh.models.sources import ColumnDataSource
 from bokeh.core.properties import (HasProps, String, Either, Float, Color, Instance, List,
                               Any, Dict)

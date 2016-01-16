@@ -359,13 +359,17 @@ class Axis extends GuideRenderer.Model
       logger.error("unrecognized side: '#{ side }'")
 
   update_layout: (view, solver) ->
+
     if not @get('visible')
       size = 0
+      @_last_size = 0
     else
       size = (@_tick_extent(view) + @_tick_label_extent(view) +
               @_axis_label_extent(view))
+
     if not @_last_size?
       @_last_size = -1
+
     if size == @_last_size
       return
     @_last_size = size

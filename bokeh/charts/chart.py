@@ -25,9 +25,10 @@ from collections import defaultdict
 import numpy as np
 
 from ..core.enums import enumeration, LegendLocation
+
 from ..models import (
     CategoricalAxis, DatetimeAxis, Grid, Legend, LinearAxis, Plot,
-    HoverTool, FactorRange, Axis, Range, Range1d
+    HoverTool, FactorRange, Axis, Range1d
 )
 from ..plotting import DEFAULT_TOOLS
 from ..plotting.helpers import _process_tools_arg
@@ -43,15 +44,17 @@ from ..util.deprecate import deprecated
 Scale = enumeration('linear', 'categorical', 'datetime')
 
 def create_axes(plot, dim):
-    attr = dim + '_range_name'
-    lin_kwargs = {attr: dim + '_lin_range', 'plot': plot}
-    cat_kwargs = {attr: dim + '_cat_range', 'plot': plot}
+
+    lin_kwargs = {dim + '_range_name': dim + '_lin_range', 'plot': plot}
+    cat_kwargs = {dim + '_range_name': dim + '_cat_range', 'plot': plot}
 
     return {'linear': LinearAxis(**lin_kwargs),
-                'categorical': CategoricalAxis(**cat_kwargs),
-                'datetime': DatetimeAxis(**lin_kwargs)}
+            'categorical': CategoricalAxis(**cat_kwargs),
+            'datetime': DatetimeAxis(**lin_kwargs)}
 
-RANGES_MAP = {'categorical': FactorRange, 'linear': Range1d}
+def create_ranges(dim):
+    return {'categorical': FactorRange(factors=['a', 'b']), 'linear': Range1d(start=0,
+                                                                              end=1)}
 
 class ChartDefaults(object):
     def apply(self, chart):
@@ -135,8 +138,6 @@ class Chart(Plot):
     x_lin_range = Instance(Range1d, default=Range1d())
     y_lin_range = Instance(Range1d, default=Range1d())
 
-    xranges = Dict(String, Instance(Range), default=None)
-    yranges = Dict(String, Instance(Range), default=None)
 
     __deprecated_attributes__ = ('filename', 'server', 'notebook')
 
@@ -167,12 +168,11 @@ class Chart(Plot):
 
         if self.xaxes is None:
             self.xaxes = create_axes(self, 'x')
-
-            #self.renderers += list(self.xaxes.values())
+            self.renderers += list(self.xaxes.values())
 
         if self.yaxes is None:
             self.yaxes = create_axes(self, 'y')
-            #self.renderers += list(self.yaxes.values())
+            self.renderers += list(self.yaxes.values())
 
         if self.xgrid:
             self.grids['x'] = Grid(dimension=0)
@@ -190,11 +190,12 @@ class Chart(Plot):
 
 
 
-    def _create_axes(self):
-        return {scale: axis_type(plot=self) for scale, axis_type in iteritems(AXES_MAP)}
+    # def _create_axes(self):
+    #     return {scale: axis_type(plot=self) for scale, axis_type in iteritems(AXES_MAP)}
 
     def _create_ranges(self):
-        return {scale: range_type() for scale, range_type in iteritems(RANGES_MAP)}
+        return {scale: range_type(bounds=None) for scale, range_type in iteritems(
+                RANGES_MAP)}
 
     def add_renderers(self, builder, renderers):
         self.renderers += renderers
@@ -226,21 +227,31 @@ class Chart(Plot):
 
         renderers = []
         for renderer in self.renderers:
-            if not isinstance(renderer, Axis):
-                renderers.append(renderer)
-        self.renderers = renderers
+            if isinstance(renderer, Axis):
+                renderer.visible = False
+                #renderer.plot = None
+            # else:
+            #     renderers.append(renderer)
+
+        #self.renderers = renderers
 
         self._xaxis = self.get_axis('x', self._scales['x'][-1],
                                     self._get_labels('x'))
+        #self.renderers.append(self._xaxis)
+        self._xaxis.visible = True
+        #self._xaxis.plot = self
         self.below = [self._xaxis]
         #self.add_layout(self._xaxis, 'below')
-        self.renderers.append(self._xaxis)
+
 
         self._yaxis = self.get_axis('y', self._scales['y'][-1], self._get_labels('y'))
+        #self.renderers.append(self._yaxis)
+        self._yaxis.visible = True
+        #self._yaxis.plot = self
         #self.add_layout(self._yaxis, 'left')
         self.left = [self._yaxis]
-        #self.left = [self._yaxis]
-        self.renderers.append(self._yaxis)
+
+
 
 
     def create_grids(self, xgrid=True, ygrid=True):
@@ -326,26 +337,29 @@ class Chart(Plot):
                 scale = 'linear'
 
         axes = getattr(self, dim + 'axes')
-        ranges = getattr(self, dim + 'ranges')
 
         if scale == "linear":
+            range_name = dim + '_lin_range'
             axis = axes['linear']
-            range = getattr(self, dim + '_lin_range')
+            range = getattr(self, range_name)
             range.start = data_range[0]
             range.end = data_range[1]
         elif scale == "datetime":
+            range_name = dim + '_lin_range'
             axis = axes['datetime']
-            range = getattr(self, dim + '_lin_range')
+            range = getattr(self, range_name)
             range.start = data_range[0]
             range.end = data_range[1]
         elif scale == "categorical":
+            range_name = dim + '_cat_range'
             axis = axes['categorical']
             axis.major_label_orientation = np.pi / 4
-            range = getattr(self, dim + '_cat_range')
-            range.factors = data_range
+            range = getattr(self, range_name)
+            range.update(factors=data_range)
         else:
+            range_name = dim + '_lin_range'
             axis = axes['linear']
-            range = getattr(self, dim + '_lin_range')
+            range = getattr(self, range_name)
             range.start = data_range[0]
             range.end = data_range[1]
 

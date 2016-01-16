@@ -101,17 +101,15 @@ class BarBuilder(Builder):
 
         self._apply_inferred_index()
 
-        if self.xlabel is None:
-            if self.attributes['label'].columns is not None:
-                self.xlabel = str(', '.join(self.attributes['label'].columns).title()).title()
-            else:
-                self.xlabel = self.values.selection
+        if self.attributes['label'].columns is not None:
+            self._xlabel = str(', '.join(self.attributes['label'].columns).title()).title()
+        else:
+            self._xlabel = self.values.selection
 
-        if self.ylabel is None:
-            if not self.label_only:
-                self.ylabel = '%s( %s )' % (self.agg.title(), str(self.values.selection).title())
-            else:
-                self.ylabel = '%s( %s )' % (self.agg.title(), ', '.join(self.attributes['label'].columns).title())
+        if not self.label_only:
+            self._ylabel = '%s( %s )' % (self.agg.title(), str(self.values.selection).title())
+        else:
+            self._ylabel = '%s( %s )' % (self.agg.title(), ', '.join(self.attributes['label'].columns).title())
 
     def _apply_inferred_index(self):
         """Configure chart when labels are provided as index instead of as kwarg."""
@@ -129,7 +127,7 @@ class BarBuilder(Builder):
             self.attributes['label'].setup(data=ColumnDataSource(self._data.df),
                                            columns=special_column)
 
-            self.xlabel = ''
+            self._xlabel = ''
 
     def set_ranges(self):
         """Push the Bar data into the ColumnDataSource and calculate
@@ -317,7 +315,7 @@ def Bar(data, label=None, values=None, color=None, stack=None, group=None, agg="
     chart = create_and_build(BarBuilder, data, **kw)
 
     # hide x labels if there is a single value, implying stacking only
-    if len(chart.x_range.factors) == 1:
-        chart.below[0].visible = False
+    # if len(chart.x_range.factors) == 1:
+    #     chart.below[0].visible = False
 
     return chart

@@ -138,8 +138,8 @@ class BoxPlotBuilder(BarBuilder):
     glyph = BoxGlyph
 
     def setup(self):
-        if self.ylabel is None:
-            self.ylabel = self.values.selected_title
+        if self._ylabel is None:
+            self._ylabel = self.values.selected_title
 
-        if self.xlabel is None:
-            self.xlabel = title_from_columns(self.attributes['label'].columns)
+        if self._xlabel is None:
+            self._xlabel = title_from_columns(self.attributes['label'].columns)

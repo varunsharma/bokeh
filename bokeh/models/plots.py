@@ -176,7 +176,8 @@ class Plot(Component):
 
         if hasattr(obj, 'plot'):
             if obj.plot is not None:
-                raise ValueError("object to be added already has 'plot' attribute set")
+                pass
+                #raise ValueError("object to be added already has 'plot' attribute set")
             obj.plot = self
 
         self.renderers.append(obj)
@@ -341,7 +342,7 @@ class Plot(Component):
     "seconds since epoch" instead of formatted dates
     """)
 
-    extra_x_ranges = Dict(String, Instance(Range1d), help="""
+    extra_x_ranges = Dict(String, Instance(Range), help="""
     Additional named ranges to make available for mapping x-coordinates.
 
     This is useful for adding additional axes.
