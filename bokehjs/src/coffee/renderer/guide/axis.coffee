@@ -315,7 +315,7 @@ class Axis extends GuideRenderer.Model
 
     @register_property('ranges', @_ranges, true)
     @register_property('normals', (() -> @_normals), true)
-    @register_property('dimension', (() -> @_dim), true)
+    @register_property('dimension', @_dim, true)
     @register_property('offsets', @_offsets, true)
 
   nonserializable_attribute_names: () ->
@@ -336,22 +336,18 @@ class Axis extends GuideRenderer.Model
 
     side = @get('layout_location')
     if side == "above"
-      @_dim = 0
       @_normals = [0, -1]
       @_size = panel._height
       @_anchor = panel._bottom
     else if side == "below"
-      @_dim = 0
       @_normals = [0, 1]
       @_size = panel._height
       @_anchor = panel._top
     else if side == "left"
-      @_dim = 1
       @_normals = [-1, 0]
       @_size = panel._width
       @_anchor = panel._right
     else if side == "right"
-      @_dim = 1
       @_normals = [1, 0]
       @_size = panel._width
       @_anchor = panel._left
@@ -402,10 +398,23 @@ class Axis extends GuideRenderer.Model
     j = (i + 1) % 2
     frame = @get('plot').get('frame')
     ranges = [
-      frame.get('x_ranges')[@get('x_range_name')],
-      frame.get('y_ranges')[@get('y_range_name')]
+      frame.get('x_ranges')[@get('x_range_name')] ? frame.get('x_range'),
+      frame.get('y_ranges')[@get('y_range_name')] ? frame.get('x_range')
     ]
     return [ranges[i], ranges[j]]
+
+  _dim: () ->
+    side = @get('layout_location') ? @get('layout')
+    if side == 'above'
+      return 0
+    else if side == 'below'
+      return 0
+    else if side == 'left'
+      return 1
+    else if side == 'right'
+      return 1
+    else
+      logger.error("cannot derive dimension from unrecognized side: '#{ side }'")
 
   _computed_bounds: () ->
     [range, cross_range] = @get('ranges')
