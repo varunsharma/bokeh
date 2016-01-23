@@ -188,15 +188,6 @@ class Chart(Plot):
         self.extra_y_ranges = {'y_cat_range': self.y_cat_range,
                                'y_lin_range': self.y_lin_range}
 
-
-
-    # def _create_axes(self):
-    #     return {scale: axis_type(plot=self) for scale, axis_type in iteritems(AXES_MAP)}
-
-    def _create_ranges(self):
-        return {scale: range_type(bounds=None) for scale, range_type in iteritems(
-                RANGES_MAP)}
-
     def add_renderers(self, builder, renderers):
         self.renderers += renderers
         self._renderer_map.extend({ r._id : builder for r in renderers })
