@@ -335,6 +335,7 @@ def help(*builders):
     """Adds a ChartHelp object to the help attribute of the function."""
     def add_help(f):
         f.help = ChartHelp(*builders)
+        f.builders = list(builders)
         return f
 
     return add_help

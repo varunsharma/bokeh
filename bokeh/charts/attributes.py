@@ -32,7 +32,7 @@ class AttrSpec(HasProps):
 
     iterable = List(Any, default=None)
 
-    attrname = String(help='Name of the attribute the spec provides.')
+    name = String(help='Name of the attribute the spec provides.')
 
     columns = Either(ColumnLabel, List(ColumnLabel), help="""
         The label or list of column labels that correspond to the columns that will be
@@ -227,7 +227,7 @@ class ColorAttr(AttrSpec):
     .. note::
         Should be expanded to support more complex coloring options.
     """
-    attrname = Override(default='color')
+    name = Override(default='color')
     iterable = Override(default=DEFAULT_PALETTE)
     bin = Bool(default=False)
 
@@ -272,7 +272,7 @@ class ColorAttr(AttrSpec):
 
 class MarkerAttr(AttrSpec):
     """An attribute specification for mapping unique data values to markers."""
-    attrname = Override(default='marker')
+    name = Override(default='marker')
     iterable = Override(default=list(marker_types.keys()))
 
     def __init__(self, **kwargs):
@@ -287,7 +287,7 @@ dashes = DashPattern._values
 
 class DashAttr(AttrSpec):
     """An attribute specification for mapping unique data values to line dashes."""
-    attrname = Override(default='dash')
+    name = Override(default='dash')
     iterable = Override(default=dashes)
 
     def __init__(self, **kwargs):
@@ -299,7 +299,7 @@ class DashAttr(AttrSpec):
 
 class IdAttr(AttrSpec):
     """An attribute specification for mapping unique data values to line dashes."""
-    attrname = Override(default='id')
+    name = Override(default='id')
 
     def _setup_iterable(self):
         return iter(range(0, len(self.items)))
@@ -313,7 +313,7 @@ class CatAttr(AttrSpec):
         labels are used for one aspect of a chart (grouping) vs another (stacking or
         legend)
     """
-    attrname = Override(default='nest')
+    name = Override(default='nest')
 
     def __init__(self, **kwargs):
         super(CatAttr, self).__init__(**kwargs)

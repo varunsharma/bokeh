@@ -16,6 +16,7 @@ from .chart import Chart, defaults
 from .attributes import color, marker, cat
 from .operations import stack, blend
 from .stats import bins
+from .interactive import interact
 
 # builders
 from .builders.line_builder import Line
