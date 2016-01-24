@@ -141,7 +141,8 @@ def interact(chart, data, selectors=None, **kwargs):
 
     chart_renderers = [renderer for renderer in plot.renderers if
                        hasattr(renderer, 'glyph')]
-    chart_renderers = {'rect': chart_renderers[0]}
+    chart_renderers = {renderer.glyph.__class__.__name__.lower(): renderer for renderer in
+                       chart_renderers}
 
     def update_chart():
         kwargs = kwargs_from_selectors(selectors)
