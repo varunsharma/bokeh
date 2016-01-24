@@ -161,6 +161,7 @@ class Chart(Plot):
 
         self._builders = []
         self._renderer_map = []
+        self._hover_tool = None
         self._ranges = defaultdict(list)
         self._labels = defaultdict(list)
         self._scales = defaultdict(list)
@@ -217,38 +218,20 @@ class Chart(Plot):
             return getattr(self, dim + 'label')
 
     def set_axes(self):
-
-        renderers = []
+        """Set the axes based on the last scale type provided from builders."""
         for renderer in self.renderers:
             if isinstance(renderer, Axis):
                 renderer.visible = False
-                #renderer.plot = None
-            # else:
-            #     renderers.append(renderer)
 
-        #self.renderers = renderers
-
-        self._xaxis = self.get_axis('x', self._scales['x'][-1],
-                                    self._get_labels('x'))
-        #self.renderers.append(self._xaxis)
+        self._xaxis = self.get_axis('x', self._scales['x'][-1], self._get_labels('x'))
         self._xaxis.visible = True
-        #self._xaxis.plot = self
         self.below = [self._xaxis]
-        #self.add_layout(self._xaxis, 'below')
-
 
         self._yaxis = self.get_axis('y', self._scales['y'][-1], self._get_labels('y'))
-        #self.renderers.append(self._yaxis)
         self._yaxis.visible = True
-        #self._yaxis.plot = self
-        #self.add_layout(self._yaxis, 'left')
         self.left = [self._yaxis]
 
-
-
-
-    def create_grids(self, xgrid=True, ygrid=True):
-
+    def create_grids(self):
         self.make_grid(0, self._xaxis.ticker)
         self.make_grid(1, self._yaxis.ticker)
 
@@ -274,7 +257,6 @@ class Chart(Plot):
         """Add the axis, grids and tools
         """
 
-        #self.set_ranges()
         self.set_axes()
         self.create_grids()
 
@@ -283,7 +265,19 @@ class Chart(Plot):
             self.create_tools(self.tools)
 
         if len(self._tooltips) > 0:
-            self.add_tools(HoverTool(tooltips=self._tooltips))
+            if self._hover_tool is None:
+                self._hover_tool = HoverTool(tooltips=self._tooltips)
+                self.add_tools(self._hover_tool)
+            else:
+                # ToDo: this is not being sent by server because it is "client-only"
+                self._hover_tool.tooltips = self._tooltips
+
+    def update(self, **kwargs):
+        self._tooltips = []
+        self._ranges.clear()
+        self._scales.clear()
+        self._labels.clear()
+        super(Chart, self).update(**kwargs)
 
     def add_legend(self, legends):
         """Add the legend to your plot, and the plot to a new Document.

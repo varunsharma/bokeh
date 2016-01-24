@@ -86,7 +86,6 @@ def create_and_build(builder_class, *data, **kws):
         for builder in chart._builders:
             builder.update(*data, **builder_kws)
             builder.add_chart_props(chart)
-        #chart.set_ranges()
         chart.start_plot()
 
     return chart
