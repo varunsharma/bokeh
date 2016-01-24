@@ -112,6 +112,9 @@ def interact(chart, data, selectors=None, **kwargs):
         interact(Bar, pd.DataFrame(data), selectors=['values', 'label'])
 
     """
+
+    # don't want to autoadd the chart because we are provided our own layout
+    # ToDo: shouldn't use the private attribute here, see issue #3638
     curstate()._autoadd = False
 
     dimensions = {}
@@ -131,31 +134,39 @@ def interact(chart, data, selectors=None, **kwargs):
         attributes = {dim_name: dim for dim_name, dim in iteritems(attributes)
                       if dim_name in selectors}
 
+    # get selectors and add to the layout
     selectors = generate_selectors(data, dimensions, attributes)
-
     inputs = VBoxForm(children=list(selectors.values()))
 
-    plot = chart(data, **kwargs_from_selectors(selectors))
+    # kwargs are constant kwargs passed in plus the selector values
+    chart_kwargs = kwargs
+    chart_kwargs.update(kwargs_from_selectors(selectors))
 
+    # create initial chart and add inputs and chart to layout
+    plot = chart(data, **chart_kwargs)
     hbox = HBox(children=[inputs, plot])
 
+    # collect the chart renderers for passing back into subsequent chart updates
     chart_renderers = [renderer for renderer in plot.renderers if
                        hasattr(renderer, 'glyph')]
     chart_renderers = {renderer.glyph.__class__.__name__.lower(): renderer for renderer in
                        chart_renderers}
 
-    def update_chart():
-        kwargs = kwargs_from_selectors(selectors)
-        kwargs['renderers'] = chart_renderers
-        kwargs['chart'] = plot
+    # add chart renderers and chart to kwargs so we don't recreate them each time
+    chart_kwargs['renderers'] = chart_renderers
+    chart_kwargs['chart'] = plot
 
-        updated_plot = chart(data, **kwargs)
+    def update_chart():
+        # get updated kwargs from selectors and update chart
+        chart_kwargs.update(kwargs_from_selectors(selectors))
+        chart(data, **chart_kwargs)
 
     def input_change(attrname, old, new):
-
         update_chart()
 
+    # hook up callbacks for selectors
     for selector in list(selectors.values()):
         selector.on_change('value', input_change)
 
+    # add the interactive chart with inputs and chart to root of document
     curdoc().add_root(hbox)
