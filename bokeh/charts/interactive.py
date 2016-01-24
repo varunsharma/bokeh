@@ -109,7 +109,8 @@ def interact(chart, data, selectors=None, **kwargs):
                 'b': [3, 5, 4, 5],
                 'c': ['foo', 'bar', 'foo', 'bar']}
 
-        interact(Bar, pd.DataFrame(data), selectors=['values', 'label'])
+        interact(Bar, pd.DataFrame(data), selectors=['values', 'label'],
+                 tooltips=[('value', '@height')])
 
     """
 
