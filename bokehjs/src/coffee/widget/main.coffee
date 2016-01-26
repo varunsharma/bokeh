@@ -16,6 +16,7 @@ module.exports = {
   HBox:                     require './hbox'
   VBox:                     require './vbox'
   VBoxForm:                 require './vboxform'
+  PHBox:                    require './phbox'
   TextInput:                require './text_input'
   AutocompleteInput:        require './autocomplete_input'
   PreText:                  require './pretext'

@@ -90,3 +90,10 @@ class VBoxForm(VBox):
     Basically, a VBox, where all components (generally form stuff)
     is wrapped in a <form> tag - important for bootstrap css
     """
+
+
+class PHBox(BaseBox):
+    """
+    A layout panel which arranges its children into a single row or column
+    through Phosphor BoxPanel Widget.
+    """
