@@ -287,7 +287,12 @@ class Builder(HasProps):
         else:
             attributes = dict()
 
+        # allow attributes to add columns they may key off of
+        for attr in list(attributes.values()):
+            attr.add_derived_columns(data._data)
+
         kws['attributes'] = attributes
+
         super(Builder, self).__init__(**kws)
 
         # collect unique columns used for attributes

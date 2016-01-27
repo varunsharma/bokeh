@@ -3,7 +3,11 @@ import pandas as pd
 
 from bokeh.charts import Scatter, output_file, show, vplot, hplot, defaults
 from bokeh.charts.operations import blend
+from bokeh.charts.attributes import color
+
+from bokeh.palettes import RdBu7
 from bokeh.charts.utils import df_from_json
+
 from bokeh.sampledata.autompg import autompg as df
 from bokeh.sampledata.iris import flowers
 from bokeh.sampledata.olympics2014 import data
@@ -51,11 +55,16 @@ scatter6 = Scatter(flowers, x=blend('petal_length', 'sepal_length', name='length
                    legend='top_right')
 scatter6.title_text_font_size = '10pt'
 
+scatter7 = Scatter(
+        df, x='mpg', y='hp', color=color('mpg', palette=RdBu7, bin=True),
+        title="x='mpg', y='hp'", xlabel="Miles Per Gallon", ylabel="Horsepower",
+        legend='top_right')
+
 output_file("scatter_multi.html", title="scatter_multi.py example")
 
 show(vplot(
     hplot(scatter0, scatter1),
     hplot(scatter2, scatter3),
     hplot(scatter4, scatter5),
-    hplot(scatter6)
+    hplot(scatter6, scatter7)
 ))

@@ -174,6 +174,25 @@ class AttrSpec(HasProps):
     def _item_tuples(self):
         return [self._ensure_tuple(item) for item in self.items]
 
+    def add_derived_columns(self, data):
+        """Add additional columns that should be grouped on.
+
+        Args:
+            data (`pandas.DataFrame`): the source data for the chart
+
+        This is used to support cases where an attribute spec would take a column
+        and create a derived set of items to assign attributes to. For example,
+        binning by some continuous column. We need to add the binned values back to
+        the primary data so that the column can be used within the groupby logic.
+
+        See Also:
+            - `ChartDataSource.groupby`
+            - `ColorAttr`
+
+        Attribute specs should add columns to the dataframe.
+        """
+        pass
+
     def set_columns(self, columns):
         """Set columns property and update derived properties as needed."""
         columns = self._ensure_list(columns)
@@ -230,6 +249,7 @@ class ColorAttr(AttrSpec):
     attrname = Override(default='color')
     iterable = Override(default=DEFAULT_PALETTE)
     bin = Bool(default=False)
+    original_columns = List(String, default=None)
 
     def __init__(self, **kwargs):
         iterable = kwargs.pop('palette', None)
@@ -269,6 +289,15 @@ class ColorAttr(AttrSpec):
         data._data[col] = pd.Categorical(data._data[col], categories=list(self.items),
                                          ordered=self.sort)
 
+    def add_derived_columns(self, data):
+        if self.bin:
+            col = self.columns[0]
+            for bin in self.bins:
+                # set all rows associated to each bin to the bin label being mapped to colors
+                data.ix[data[col].isin(bin.values),
+                        col + '_bin'] = bin.label[0]
+
+            self.columns = [col + '_bin']
 
 class MarkerAttr(AttrSpec):
     """An attribute specification for mapping unique data values to markers."""
