@@ -24,7 +24,9 @@ from bokeh.charts.attributes import MarkerAttr, ColorAttr
 
 from bokeh.charts.utils import help
 
-from bokeh.core.properties import Override
+from bokeh.models import ColumnDataSource
+from six import iteritems
+from collections import defaultdict
 
 #-----------------------------------------------------------------------------
 # Classes and functions
@@ -44,11 +46,22 @@ class ScatterBuilder(XYBuilder):
     """
 
     default_attributes = {'color': ColorAttr(),
-                          'marker': MarkerAttr()}
+                          'marker': MarkerAttr(default='circle')}
 
-    comp_glyphs = Override(default=[PointGlyph])
+    comp_glyph_types = [PointGlyph]
+
 
     def yield_renderers(self):
+        """Use the rect glyphs to display the bars.
+
+        Takes reference points from data loaded at the ColumnDataSource.
+        """
+
+        self.update_renderers()
+        for renderer in list(self.renderers.values()):
+            yield renderer
+
+    def update_renderers(self):
         """Use the marker glyphs to display the points.
 
         Takes reference points from data loaded at the ColumnDataSource.
@@ -65,8 +78,18 @@ class ScatterBuilder(XYBuilder):
 
             self.add_glyph(group, glyph)
 
-            for renderer in glyph.renderers:
-                yield renderer
+            data_map = defaultdict(list)
+            import pandas as pd
+            for comp_glyph in self.comp_glyphs:
+                data_map[comp_glyph.marker].append(comp_glyph.df)
+
+            for renderer_name, renderer in iteritems(self.renderers):
+                if renderer_name in data_map:
+                    data = pd.concat(data_map[renderer_name])
+                    data = ColumnDataSource(data)
+                    self.renderers[renderer_name].data_source.data = data.data
+                else:
+                    self.renderers[renderer_name].glyph.visible = False
 
 
 @help(ScatterBuilder)

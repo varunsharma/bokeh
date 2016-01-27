@@ -51,7 +51,7 @@ class XyGlyph(CompositeGlyph):
     x = EitherColumn(String, Column(Float), Column(String), Column(Datetime), Column(Bool))
     y = EitherColumn(String, Column(Float), Column(String), Column(Datetime), Column(Bool))
 
-    def build_source(self):
+    def build_sources(self):
         labels = self._build_label_array(('x', 'y'), self.label)
         str_labels = [str(label) for label in labels]
 
@@ -77,6 +77,8 @@ class XyGlyph(CompositeGlyph):
         #                of just failing. When/If we end up exposing
         #                CompositeGlyphs we should consider making this
         #                more robust (either enforcing data or checking)
+        if self.source is None:
+            return 1
         try:
             return self.source.data['x_values'].max()
         except AttributeError:
@@ -84,6 +86,8 @@ class XyGlyph(CompositeGlyph):
 
     @property
     def x_min(self):
+        if self.source is None:
+            return 0
         try:
             return self.source.data['x_values'].min()
         except AttributeError:
@@ -91,6 +95,8 @@ class XyGlyph(CompositeGlyph):
 
     @property
     def y_max(self):
+        if self.source is None:
+            return 1
         try:
             return self.source.data['y_values'].max()
         except AttributeError:
@@ -98,6 +104,8 @@ class XyGlyph(CompositeGlyph):
 
     @property
     def y_min(self):
+        if self.source is None:
+            return 0
         try:
             return self.source.data['y_values'].min()
         except AttributeError:
@@ -139,24 +147,30 @@ class PointGlyph(XyGlyph):
         super(PointGlyph, self).__init__(**kwargs)
         self.setup()
 
-    def build_source(self):
-        data = super(PointGlyph, self).build_source()
+    def build_sources(self):
+        data = super(PointGlyph, self).build_sources()
         n_rows = len(data['x_values'])
 
         # add constant attribute columns for length of x_values
         for attr in self._attrs:
             data[attr] = n_rows * [getattr(self, attr)]
 
-        return data
+        for glyph_name in list(self.glyphs.keys()):
+            yield glyph_name, data
 
     def get_glyph(self):
         return marker_types[self.marker]
 
+    @classmethod
+    def generate_glyphs(cls):
+        attr_kwargs = {attr: attr for attr in cls._attrs}
+        for glyph_name, glyph in iteritems(cls.glyphs):
+            yield glyph_name, glyph(x='x_values', y='y_values', **attr_kwargs)
+
     def build_renderers(self):
-        glyph_type = self.get_glyph()
-        attr_kwargs = {attr: attr for attr in self._attrs}
-        glyph = glyph_type(x='x_values', y='y_values', **attr_kwargs)
-        yield GlyphRenderer(glyph=glyph)
+        """Yields a `GlyphRenderer` associated with a `Rect` glyph."""
+        for name, glyph in self.generate_glyphs():
+            yield GlyphRenderer(glyph=glyph)
 
 
 class LineGlyph(XyGlyph):
@@ -185,7 +199,7 @@ class LineGlyph(XyGlyph):
         super(LineGlyph, self).__init__(**kwargs)
         self.setup()
 
-    def build_source(self):
+    def build_sources(self):
         if self.x is None:
             x = self.y.index
             data = dict(x_values=x, y_values=self.y)
@@ -231,8 +245,8 @@ class AreaGlyph(LineGlyph):
         super(AreaGlyph, self).__init__(**kwargs)
         self.setup()
 
-    def build_source(self):
-        data = super(AreaGlyph, self).build_source()
+    def build_sources(self):
+        data = super(AreaGlyph, self).build_sources()
 
         x0, y0 = generate_patch_base(pd.Series(list(data['x_values'])),
                                      pd.Series(list(data['y_values'])))
@@ -345,7 +359,7 @@ class HorizonGlyph(AreaGlyph):
 
         super(HorizonGlyph, self).__init__(**kwargs)
 
-    def build_source(self):
+    def build_sources(self):
         data = {}
 
         # Build columns for the positive values
@@ -447,7 +461,7 @@ class HorizonGlyph(AreaGlyph):
 class StepGlyph(LineGlyph):
     """Represents a group of data as a stepped line."""
 
-    def build_source(self):
+    def build_sources(self):
         x = self.x
         y = self.y
         if self.x is None:
@@ -628,7 +642,7 @@ class Interval(AggregateGlyph):
         """The total range between the start and end."""
         return self.end - self.start
 
-    def build_source(self):
+    def build_sources(self):
         # ToDo: Handle rotation
         self.start = self.get_start()
         self.end = self.get_end()
@@ -645,9 +659,9 @@ class Interval(AggregateGlyph):
         fill_alpha = [self.fill_alpha]
         line_color = [self.line_color]
         line_alpha = [self.line_alpha]
-        return dict(x=x, y=y, width=width, height=height, color=color,
-                    fill_alpha=fill_alpha, line_color=line_color,
-                    line_alpha=line_alpha)
+        yield 'rect', dict(x=x, y=y, width=width, height=height, color=color,
+                           fill_alpha=fill_alpha, line_color=line_color,
+                           line_alpha=line_alpha)
 
     @property
     def x_max(self):
@@ -872,7 +886,7 @@ class BoxGlyph(AggregateGlyph):
         self.w0 = self.q1 - (1.5 * self.iqr)
         self.w1 = self.q3 + (1.5 * self.iqr)
 
-    def build_source(self):
+    def build_sources(self):
         """Calculate stats and builds and returns source for whiskers."""
         self.calc_quartiles()
         x_label = self.get_dodge_label()
@@ -887,7 +901,7 @@ class BoxGlyph(AggregateGlyph):
 
         return dict(x0s=x0s, y0s=y0s, x1s=x1s, y1s=y1s)
 
-    def _set_sources(self):
+    def _set_source(self):
         """Set the column data source on the whisker glyphs."""
         self.whisker_glyph.data_source = self.source
 
@@ -950,11 +964,11 @@ class HistogramGlyph(AggregateGlyph):
         super(HistogramGlyph, self).__init__(**kwargs)
         self.setup()
 
-    def _set_sources(self):
+    def _set_source(self):
         # No need to set sources, since composite glyphs handle this
         pass
 
-    def build_source(self):
+    def build_sources(self):
         # No need to build source, since composite glyphs handle this
         return None
 
@@ -1015,7 +1029,7 @@ class BinGlyph(XyGlyph):
         super(XyGlyph, self).__init__(**kwargs)
         self.setup()
 
-    def build_source(self):
+    def build_sources(self):
         return {'x': self.x, 'y': self.y, 'values': self.values}
 
     def build_renderers(self):

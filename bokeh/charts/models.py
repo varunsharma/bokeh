@@ -94,19 +94,24 @@ class CompositeGlyph(HasProps):
             this method would be called after data is added.
         """
         if self.renderers is not None:
-            data = self.build_source()
 
-            if data is not None:
+            for source_name, data in self.build_sources():
 
-                if isinstance(data, dict):
-                    source = ColumnDataSource(data)
+                if data is not None:
 
-                if not isinstance(source, ColumnDataSource) and source is not None:
-                    raise TypeError('build_source must return dict or ColumnDataSource.')
-                else:
-                    self.source = self.add_chart_index(source)
+                    if isinstance(data, dict):
+                        source = ColumnDataSource(data)
 
-                self._set_sources()
+                    if not isinstance(source, ColumnDataSource) and source is not None:
+                        raise TypeError('build_source must return dict or ColumnDataSource.')
+                    else:
+                        source = self.add_chart_index(source)
+
+                        # only save as source if it has data
+                        if all([len(col) > 0 for col in list(source.data.values())]):
+                            self.source = source
+
+                    self._set_source(source_name, source)
 
     @property
     def data(self):
@@ -175,15 +180,15 @@ class CompositeGlyph(HasProps):
     def build_renderers(self):
         yield GlyphRenderer()
 
-    def build_source(self):
+    def build_sources(self):
         data = {}
 
         if self.values is not None:
             data = {'values': self.values}
 
-        return data
+        yield '', data
 
-    def _set_sources(self):
+    def _set_source(self, name, source):
         """Store reference to source in each GlyphRenderer.
 
         .. note::
@@ -191,7 +196,8 @@ class CompositeGlyph(HasProps):
             override this method and handle the sources manually.
         """
         for renderer in self.renderers:
-            renderer.data_source = self.source
+            if renderer.glyph.__class__.__name__.lower() == name:
+                renderer.data_source = source
 
     def __stack__(self, glyphs):
         """A special method the `stack` function applies to composite glyphs."""

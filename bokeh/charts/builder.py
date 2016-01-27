@@ -692,19 +692,18 @@ class XYBuilder(Builder):
             if sort:
                 factors.sort(inplace=True)
             setattr(self, dim + 'scale', 'categorical')
-            return FactorRange(factors=factors.tolist())
+            return factors.tolist()
         elif 'datetime' in dtype:
             setattr(self, dim + 'scale', 'datetime')
-            return Range1d(start=start, end=end)
+            return [start, end]
         else:
-
             if end == 'None' or (end - start) == 0:
                 setattr(self, dim + 'scale', 'categorical')
-                return FactorRange(factors=['None'])
+                return ['None']
             else:
                 diff = end - start
                 setattr(self, dim + 'scale', 'linear')
-                return Range1d(start=start - 0.1 * diff, end=end + 0.1 * diff)
+                return [start - 0.1 * diff, end + 0.1 * diff]
 
 
 class AggregateBuilder(Builder):
