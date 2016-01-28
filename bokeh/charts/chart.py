@@ -133,6 +133,9 @@ class Chart(Plot):
     x_lin_range = Instance(Range1d, default=Range1d())
     y_lin_range = Instance(Range1d, default=Range1d())
 
+    x_range_name = String(default='default')
+    y_range_name = String(default='default')
+
     __deprecated_attributes__ = ('filename', 'server', 'notebook', 'width', 'height')
 
     def __init__(self, *args, **kwargs):
@@ -191,6 +194,12 @@ class Chart(Plot):
         self.extra_y_ranges = {'y_cat_range': self.y_cat_range,
                                'y_lin_range': self.y_lin_range}
 
+        for ax in list(self.xaxes.values()):
+            self.add_layout(ax, place='below')
+
+        for ax in list(self.yaxes.values()):
+            self.add_layout(ax, place='left')
+
     def add_renderers(self, builder, renderers):
         self.renderers += renderers
         self._renderer_map.extend({ r._id : builder for r in renderers })
@@ -225,15 +234,26 @@ class Chart(Plot):
 
         self._xaxis = self.get_axis('x', self._scales['x'][-1], self._get_labels('x'))
         self._xaxis.visible = True
-        self.below = [self._xaxis]
 
         self._yaxis = self.get_axis('y', self._scales['y'][-1], self._get_labels('y'))
         self._yaxis.visible = True
-        self.left = [self._yaxis]
 
     def create_grids(self):
         self.make_grid(0, self._xaxis.ticker)
         self.make_grid(1, self._yaxis.ticker)
+
+        # new_x_grid = self.make_grid(0, self._xaxis.ticker)
+        # new_y_grid = self.make_grid(1, self._yaxis.ticker)
+
+        # new_renderers = []
+        # for renderer in self.renderers:
+        #     if renderer._id != self.grids['x']._id and renderer._id != self.grids['y']._id:
+        #         new_renderers.append(renderer)
+        # self.renderers = new_renderers
+        # self.add_layout(new_x_grid)
+        # self.add_layout(new_y_grid)
+        # self.grids['x'] = new_x_grid
+        # self.grids['y'] = new_y_grid
 
     def create_tools(self, tools):
         """Create tools if given tools=True input.
@@ -353,6 +373,7 @@ class Chart(Plot):
         axis.axis_label = label
 
         setattr(self, dim + '_range', range)
+        setattr(self, dim + '_range_name', range_name)
 
         return axis
 
@@ -378,7 +399,12 @@ class Chart(Plot):
 
         grid = getattr(self, dim + 'grid')
         if grid:
-            pass
+            # new_grid = Grid(dimension=dimension, ticker=ticker,
+            #                 x_range_name=self.x_range_name,
+            #                 y_range_name=self.y_range_name)
+            # return new_grid
+            setattr(self.grids[dim], 'x_range_name', getattr(self, 'x_range_name'))
+            setattr(self.grids[dim], 'y_range_name', getattr(self, 'y_range_name'))
             self.grids[dim].ticker = ticker
 
     @property
