@@ -31,7 +31,6 @@ from collections import defaultdict
 #-----------------------------------------------------------------------------
 # Classes and functions
 #-----------------------------------------------------------------------------
-from build.lib.bokeh.core.properties import Override
 
 
 class ScatterBuilder(XYBuilder):
