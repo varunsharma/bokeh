@@ -1,15 +1,12 @@
-import codecs
+from __future__ import print_function
+
 import inspect
 from json import loads
-import os
-import sys
 
 from bokeh.model import Model
 import bokeh.models as models
 from bokeh.core.properties import DataSpec
 from bokeh.core.json_encoder import serialize_json
-
-dest_dir = sys.argv[1]
 
 classes = [member for name, member in inspect.getmembers(models) if inspect.isclass(member)]
 
@@ -42,11 +39,11 @@ def leaves(tree, underneath):
         else:
             return [leaf] + leaves(tail, underneath)
 
-all_json = {}
+core_json = {}
 for leaf in leaves(all_tree, model_class):
     klass = leaf[0]
     vm_name = klass.__view_model__
-    if vm_name in all_json:
+    if vm_name in core_json:
         continue
     defaults = {}
     instance = klass()
@@ -61,47 +58,15 @@ for leaf in leaves(all_tree, model_class):
         elif isinstance(default, float) and default == float('inf'):
             default = None
         defaults[name] = default
-    all_json[vm_name] = defaults
+    core_json[vm_name] = defaults
 
 widgets_json = {}
 for leaf_widget in leaves(all_tree, widget_class):
     klass = leaf_widget[0]
     vm_name = klass.__view_model__
     if vm_name not in widgets_json:
-        widgets_json[vm_name] = all_json[vm_name]
-        del all_json[vm_name]
+        widgets_json[vm_name] = core_json[vm_name]
+        del core_json[vm_name]
 
-def output_defaults_module(filename, defaults):
-    output = serialize_json(defaults, indent=2)
-    coffee_template = """\
-all_defaults = %s
-
-get_defaults = (name) ->
-  if name of all_defaults
-    all_defaults[name]
-  else
-    null
-
-all_view_model_names = () ->
-  Object.keys(all_defaults)
-
-module.exports = {
-  get_defaults: get_defaults
-  all_view_model_names: all_view_model_names
-}
-"""
-    try:
-        os.makedirs(os.path.dirname(filename))
-    except OSError as e:
-        pass
-    f = codecs.open(filename, 'w', 'utf-8')
-    f.write(coffee_template % output)
-    f.close()
-
-    print("Wrote %s with %d model classes" % (filename, len(defaults)))
-
-
-output_defaults_module(filename = os.path.join(dest_dir, 'test_common/defaults/models_defaults.coffee'),
-                       defaults = all_json)
-output_defaults_module(filename = os.path.join(dest_dir, 'test_common/defaults/widgets_defaults.coffee'),
-                       defaults = widgets_json)
+defaults = dict(core=core_json, widgets=widgets_json)
+print(serialize_json(defaults, indent=2))

@@ -2,8 +2,7 @@ _ = require "underscore"
 {expect} = require "chai"
 utils = require "../utils"
 
-core_defaults = require "./defaults/models_defaults"
-widget_defaults = require "./defaults/widgets_defaults"
+defaults = require "../../build/defaults.json"
 
 {Collections} = utils.require "common/base"
 properties = utils.require "common/properties"
@@ -13,11 +12,16 @@ widget_locations = utils.require "models/widgets/main"
 Collections.register_locations(widget_locations)
 
 all_view_model_names = []
-all_view_model_names = all_view_model_names.concat(core_defaults.all_view_model_names())
-all_view_model_names = all_view_model_names.concat(widget_defaults.all_view_model_names())
+all_view_model_names = all_view_model_names.concat(Object.keys(defaults.core))
+all_view_model_names = all_view_model_names.concat(Object.keys(defaults.widgets))
 
 get_defaults = (name) ->
-  core_defaults.get_defaults(name) or widget_defaults.get_defaults(name)
+  if name of defaults.core
+    return defaults.core[name]
+  else if name of defaults.widgets
+    return defaults.widgets[name]
+  else
+    return null
 
 safe_stringify = (v) ->
   if v == Infinity
@@ -100,7 +104,7 @@ describe "Defaults", ->
   # in Bokeh or just leave it as a curated (or ad hoc?) subset
   it.skip "have all non-Widget view models from Python in the Bokeh object", ->
     missing = []
-    for name in core_defaults.all_view_model_names()
+    for name in Object.keys(defaults.core)
       if name not of Bokeh
         missing.push(name)
     for m in missing
@@ -109,7 +113,7 @@ describe "Defaults", ->
 
   it "have all Widget view models from Python in widget locations registry", ->
     missing = []
-    for name in widget_defaults.all_view_model_names()
+    for name in Object.keys(defaults.widgets)
       if name not of widget_locations
         missing.push(name)
     for m in missing

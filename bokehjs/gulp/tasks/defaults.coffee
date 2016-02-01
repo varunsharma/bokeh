@@ -1,37 +1,39 @@
 _ = require "underscore"
+fs = require "fs"
 path = require "path"
+mkdirp = require "mkdirp"
 child_process = require "child_process"
 gulp = require "gulp"
 gutil = require "gulp-util"
 argv = require("yargs").argv
+paths = require "../paths"
 
 gulp.task "defaults:generate", (cb) ->
-  generateDefaults = (next) ->
-    if argv.verbose then gutil.log("Generating defaults.coffee")
-    bokehjsdir = path.normalize(process.cwd())
-    basedir = path.normalize(bokehjsdir + "/..")
-    oldpath = process.env['PYTHONPATH']
-    if oldpath?
-      pypath = "#{basedir}:#{oldpath}"
+  if argv.verbose then gutil.log("Generating defaults.json")
+  bokehjsdir = path.normalize(process.cwd())
+  basedir = path.normalize(bokehjsdir + "/..")
+  oldpath = process.env['PYTHONPATH']
+  if oldpath?
+    pypath = "#{basedir}:#{oldpath}"
+  else
+    pypath = basedir
+  env = _.extend({}, process.env, { PYTHONPATH: pypath })
+  proc = child_process.spawn("python", ['./gulp/tasks/generate_defaults.py'], {
+    env: env,
+    cwd: bokehjsdir
+  })
+  json = ""
+  proc.stdout.on 'data', (data) -> json += data
+  proc.stderr.on 'data', (data) -> gutil.log("generate_defaults.py: #{data}")
+  proc.on 'close', (code) ->
+    if code != 0
+      cb(new Error("generate_defaults.py exited code #{code}"))
     else
-      pypath = basedir
-    env = _.extend({}, process.env, { PYTHONPATH: pypath })
-    handle = child_process.spawn("python", ['./gulp/tasks/generate_defaults.py', './test/'], {
-      env: env,
-      cwd: bokehjsdir
-    })
-    handle.stdout.on 'data', (data) ->
-      ("" + data)
-        .split('\n')
-        .filter (line) -> line.trim().length != 0
-        .forEach (line) -> gutil.log("generate_defaults.py: #{line}")
-    handle.stderr.on 'data', (data) ->
-      gutil.log("generate_defaults.py: #{data}")
-    handle.on 'close', (code) ->
-      if code != 0
-        cb(new Error("generate_defaults.py exited code #{code}"))
-      else
-        cb()
+      defaultsDir = paths.buildDir.all
+      mkdirp defaultsDir, (err) ->
+        if err
+          cb(err)
+        else
+          fs.writeFile(path.join(defaultsDir, "defaults.json"), json, cb)
 
-  generateDefaults(cb)
   null # XXX: this is extremely important to allow cb() to work
