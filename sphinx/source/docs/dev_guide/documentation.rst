@@ -10,14 +10,13 @@ We use Sphinx_ to generate our HTML documentation. You will need the following
 packages installed in order to build Bokeh documentation:
 
 * docutils
+* ggplot
+* pygments
+* pyyaml
+* seaborn
 * sphinx
 * sphinxcontrib-httpdomain
-* seaborn
-* pygments
 * yaml
-* pyyaml
-* ggplot
-* seaborn
 
 These can be installed using ``conda`` or ``pip`` or from source. In
 addition to the package requirements, you will also need to have the sample
