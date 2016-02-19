@@ -6,6 +6,10 @@ module.exports = {
   SelectionManager:         require './selection_manager'
   Selector:                 require './selector'
   ToolEvents:               require './tool_events'
+  Box:                      require './box'
+  Row:                      require './row'
+  Column:                   require './column'
+  DemoWidget:               require './demo_widget'
 
   BoxAnnotation:            require '../models/annotations/box_annotation'
   Legend:                   require '../models/annotations/legend'
