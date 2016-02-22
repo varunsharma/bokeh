@@ -42,6 +42,17 @@ class Box extends Model
     @set('dom_top', 0)
     @_width = new Variable()
     @_height = new Variable()
+    # for children that want to be the same size
+    # as other children, make them all equal to these
+    @_child_equal_size_width = new Variable()
+    @_child_equal_size_height = new Variable()
+
+    # these are passed up to our parent after basing
+    # them on the child box-equal-size vars
+    @_box_equal_size_top = new Variable()
+    @_box_equal_size_bottom = new Variable()
+    @_box_equal_size_left = new Variable()
+    @_box_equal_size_right = new Variable()
 
   props: ->
     return _.extend {}, super(), {
@@ -75,26 +86,22 @@ class Box extends Model
         else
           [rect[1], rect[3]]
 
-      # return size variables to be made equal in [box-aligned, orthogonal] direction
-      child_size_variables = (child) =>
+      add_equal_size_constraints = (child, constraints) =>
+        # child's "interesting area" (like the plot area) is the
+        # same size as the previous child (a child can opt out of
+        # this by not returning the box-equal-size variables)
+
         vars = child.get_constrained_variables()
-        if 'box-equal-size-horizontal' of vars
-          width = vars['box-equal-size-horizontal']
-        else
-          width = vars['width']
-        if 'box-equal-size-vertical' of vars
-          height = vars['box-equal-size-vertical']
-        else
-          height = vars['height']
-        if @_horizontal
-          [width, height]
-        else
-          [height, width]
+        if 'box-equal-size-top' of vars
+          constraints.push(EQ([-1, vars['box-equal-size-top']], [-1, vars['box-equal-size-bottom']], vars['height'], @_child_equal_size_height))
+
+        if 'box-equal-size-left' of vars
+          constraints.push(EQ([-1, vars['box-equal-size-left']], [-1, vars['box-equal-size-right']], vars['width'], @_child_equal_size_width))
 
       info = (child) =>
         {
           span: span(child_rect(child))
-          sizes: child_size_variables(child)
+          # well, we used to have more in here...
         }
 
       result = []
@@ -109,6 +116,8 @@ class Box extends Model
         else
           result.push(EQ(rect[2], [ -1, @_width ]))
 
+        add_equal_size_constraints(child, result)
+
         # pull child constraints up recursively
         result = result.concat(child.get_constraints())
 
@@ -119,12 +128,6 @@ class Box extends Model
         # each child's start equals the previous child's end
         # (with spacing inserted)
         result.push(EQ(last.span[0], last.span[1], spacing, [-1, next.span[0]]))
-
-        # child's "interesting area" (like the plot area) is the
-        # same size as the previous child (this will be
-        # configurable someday perhaps)
-        result.push(EQ(last.sizes[0], [-1, next.sizes[0]]))
-        #result.push(EQ(last.sizes[1], [-1, next.sizes[1]]))
 
         last = next
 
@@ -142,12 +145,20 @@ class Box extends Model
       # line up edges in same-arity boxes
       result = result.concat(@_align_inner_cell_edges_constraints())
 
+      # build our equal-size bounds from the child ones
+      result = result.concat(@_box_equal_size_bounds(true)) # horizontal=true
+      result = result.concat(@_box_equal_size_bounds(false))
+
     result
 
   get_constrained_variables: () ->
     {
-      'width' : @_width,
+      'width' : @_width
       'height' : @_height
+      'box-equal-size-top' : @_box_equal_size_top
+      'box-equal-size-bottom' : @_box_equal_size_bottom
+      'box-equal-size-left' : @_box_equal_size_left
+      'box-equal-size-right' : @_box_equal_size_right
     }
 
   get_layoutable_children: () ->
@@ -310,6 +321,34 @@ class Box extends Model
     add_all_equal(end_edges)
 
     # console.log("computed constraints ", result)
+
+    return result
+
+  _box_equal_size_bounds: (horizontal) ->
+    [start_leaves, end_leaves] = @_find_edge_leaves(horizontal)
+
+    if horizontal
+      start_variable = 'box-equal-size-left'
+      end_variable = 'box-equal-size-right'
+      our_start = @_box_equal_size_left
+      our_end = @_box_equal_size_right
+    else
+      start_variable = 'box-equal-size-top'
+      end_variable = 'box-equal-size-bottom'
+      our_start = @_box_equal_size_top
+      our_end = @_box_equal_size_bottom
+
+    result = []
+    add_constraints = (ours, leaves, name) ->
+      edges = []
+      for leaf in leaves
+        vars = leaf.get_constrained_variables()
+        if name of vars
+          result.push(EQ([-1, ours], vars[name]))
+      null # prevent coffeescript from making a tmp array
+
+    add_constraints(our_start, start_leaves, start_variable)
+    add_constraints(our_end, end_leaves, end_variable)
 
     return result
 

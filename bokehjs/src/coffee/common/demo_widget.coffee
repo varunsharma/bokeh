@@ -207,22 +207,26 @@ class DemoWidget extends Model
       'width' : @_width,
       'height' : @_height
       # when this widget is on the edge of a box visually,
-      # align these variables down that edge
+      # align these variables down that edge. Right/bottom
+      # are an inset from the edge.
       'on-top-edge-align' : @_plot_top
       'on-bottom-edge-align' : @_height_minus_plot_bottom
       'on-left-edge-align' : @_plot_left
       'on-right-edge-align' : @_width_minus_plot_right
       # when this widget is in a box cell with the same "arity
       # path" as a widget in another cell, align these variables
-      # between the two box cells
+      # between the two box cells. Right/bottom are an inset from
+      # the edge.
       'on-top-cell-align' : @_plot_top
       'on-bottom-cell-align' : @_height_minus_plot_bottom
       'on-left-cell-align' : @_plot_left
       'on-right-cell-align' : @_width_minus_plot_right
-      # when this widget is in a box, make these variables
-      # the same size as these variables in the rest of the box
-      'box-equal-size-horizontal' : @_plot_right_minus_plot_left
-      'box-equal-size-vertical' : @_plot_bottom_minus_plot_top
+      # when this widget is in a box, make these the same distance
+      # apart in every widget. Right/bottom are inset from the edge.
+      'box-equal-size-top' : @_plot_top
+      'box-equal-size-bottom' : @_height_minus_plot_bottom
+      'box-equal-size-left' : @_plot_left
+      'box-equal-size-right' : @_width_minus_plot_right
     }
 
   get_layoutable_children: () ->
