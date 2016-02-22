@@ -99,11 +99,13 @@ class Box extends Model
         # this by not returning the box-equal-size variables)
 
         vars = child.get_constrained_variables()
-        if 'box-equal-size-top' of vars
-          constraints.push(EQ([-1, vars['box-equal-size-top']], [-1, vars['box-equal-size-bottom']], vars['height'], @_child_equal_size_height))
 
-        if 'box-equal-size-left' of vars
-          constraints.push(EQ([-1, vars['box-equal-size-left']], [-1, vars['box-equal-size-right']], vars['width'], @_child_equal_size_width))
+        if @_horizontal
+          if 'box-equal-size-left' of vars
+            constraints.push(EQ([-1, vars['box-equal-size-left']], [-1, vars['box-equal-size-right']], vars['width'], @_child_equal_size_width))
+        else
+          if 'box-equal-size-top' of vars
+            constraints.push(EQ([-1, vars['box-equal-size-top']], [-1, vars['box-equal-size-bottom']], vars['height'], @_child_equal_size_height))
 
       info = (child) =>
         {
