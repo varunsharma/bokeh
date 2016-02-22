@@ -324,19 +324,19 @@ class Box extends Model
 
     return result
 
-  _box_equal_size_bounds: (horizontal) ->
+  _box_insets_from_child_insets: (horizontal, child_variable_prefix, our_variable_prefix) ->
     [start_leaves, end_leaves] = @_find_edge_leaves(horizontal)
 
     if horizontal
-      start_variable = 'box-equal-size-left'
-      end_variable = 'box-equal-size-right'
-      our_start = @_box_equal_size_left
-      our_end = @_box_equal_size_right
+      start_variable = "#{child_variable_prefix}-left"
+      end_variable = "#{child_variable_prefix}-right"
+      our_start = @["#{our_variable_prefix}_left"]
+      our_end = @["#{our_variable_prefix}_right"]
     else
-      start_variable = 'box-equal-size-top'
-      end_variable = 'box-equal-size-bottom'
-      our_start = @_box_equal_size_top
-      our_end = @_box_equal_size_bottom
+      start_variable = "#{child_variable_prefix}-top"
+      end_variable = "#{child_variable_prefix}-bottom"
+      our_start = @["#{our_variable_prefix}_top"]
+      our_end = @["#{our_variable_prefix}_bottom"]
 
     result = []
     add_constraints = (ours, leaves, name) ->
@@ -351,6 +351,9 @@ class Box extends Model
     add_constraints(our_end, end_leaves, end_variable)
 
     return result
+
+  _box_equal_size_bounds: (horizontal) ->
+    @_box_insets_from_child_insets(horizontal, 'box-equal-size', '_box_equal_size')
 
   set_dom_origin: (left, top) ->
     @set({ dom_left: left, dom_top: top })
