@@ -203,6 +203,12 @@ class DemoWidget extends Model
     return result
 
   get_constrained_variables: () ->
+    # Note: a bunch of these are synonyms right now / in plots,
+    # but they don't have to be synonyms in all widgets. Also we
+    # might selectively disable/enable certain synonyms according
+    # to properties set by the app developer, for example dropping
+    # the box-equal-size- synonyms would keep us from matching the
+    # size of other plots in the box.
     {
       'width' : @_width,
       'height' : @_height
@@ -217,10 +223,10 @@ class DemoWidget extends Model
       # path" as a widget in another cell, align these variables
       # between the two box cells. Right/bottom are an inset from
       # the edge.
-      'on-top-cell-align' : @_plot_top
-      'on-bottom-cell-align' : @_height_minus_plot_bottom
-      'on-left-cell-align' : @_plot_left
-      'on-right-cell-align' : @_width_minus_plot_right
+      'box-cell-align-top' : @_plot_top
+      'box-cell-align-bottom' : @_height_minus_plot_bottom
+      'box-cell-align-left' : @_plot_left
+      'box-cell-align-right' : @_width_minus_plot_right
       # when this widget is in a box, make these the same distance
       # apart in every widget. Right/bottom are inset from the edge.
       'box-equal-size-top' : @_plot_top

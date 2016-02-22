@@ -54,6 +54,13 @@ class Box extends Model
     @_box_equal_size_left = new Variable()
     @_box_equal_size_right = new Variable()
 
+    # these are passed up to our parent after basing
+    # them on the child box-equal-size vars
+    @_box_cell_align_top = new Variable()
+    @_box_cell_align_bottom = new Variable()
+    @_box_cell_align_left = new Variable()
+    @_box_cell_align_right = new Variable()
+
   props: ->
     return _.extend {}, super(), {
       children: [ p.Array, [] ],
@@ -149,6 +156,10 @@ class Box extends Model
       result = result.concat(@_box_equal_size_bounds(true)) # horizontal=true
       result = result.concat(@_box_equal_size_bounds(false))
 
+      # propagate cell alignment (between same-arity boxes) up the hierarchy
+      result = result.concat(@_box_cell_align_bounds(true)) # horizontal=true
+      result = result.concat(@_box_cell_align_bounds(false))
+
     result
 
   get_constrained_variables: () ->
@@ -159,26 +170,30 @@ class Box extends Model
       'box-equal-size-bottom' : @_box_equal_size_bottom
       'box-equal-size-left' : @_box_equal_size_left
       'box-equal-size-right' : @_box_equal_size_right
+      'box-cell-align-top' : @_box_cell_align_top
+      'box-cell-align-bottom' : @_box_cell_align_bottom
+      'box-cell-align-left' : @_box_cell_align_left
+      'box-cell-align-right' : @_box_cell_align_right
     }
 
   get_layoutable_children: () ->
     @get('children')
 
   @_left_right_inner_cell_edge_variables = [
-    'on-left-cell-align',
-    'on-right-cell-align'
+    'box-cell-align-left',
+    'box-cell-align-right'
   ]
 
   @_top_bottom_inner_cell_edge_variables = [
-    'on-top-cell-align',
-    'on-bottom-cell-align'
+    'box-cell-align-top',
+    'box-cell-align-bottom'
   ]
 
   _flatten_cell_edge_variables: (add_path) ->
     # we build a flat dictionary of variables keyed by strings like these:
-    # "on-top-cell-align"
-    # "on-top-cell-align row-2-0-"
-    # "on-top-cell-align row-1-0-row-2-0-"
+    # "box-cell-align-top"
+    # "box-cell-align-top row-2-0-"
+    # "box-cell-align-top row-1-0-row-2-0-"
     #
     # the trailing stuff is the "path" to the box cell through all
     # ancestor cells.
@@ -199,10 +214,11 @@ class Box extends Model
         cell_vars = child._flatten_cell_edge_variables(true)
       else
         cell_vars = {}
-        all_vars = child.get_constrained_variables()
-        for name in relevant_edges
-          if name of all_vars
-            cell_vars[name] = [all_vars[name]]
+
+      all_vars = child.get_constrained_variables()
+      for name in relevant_edges
+        if name of all_vars
+          cell_vars[name] = [all_vars[name]]
 
       for key, variables of cell_vars
         if add_path
@@ -354,6 +370,9 @@ class Box extends Model
 
   _box_equal_size_bounds: (horizontal) ->
     @_box_insets_from_child_insets(horizontal, 'box-equal-size', '_box_equal_size')
+
+  _box_cell_align_bounds: (horizontal) ->
+    @_box_insets_from_child_insets(horizontal, 'box-cell-align', '_box_cell_align')
 
   set_dom_origin: (left, top) ->
     @set({ dom_left: left, dom_top: top })
