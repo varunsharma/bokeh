@@ -4,7 +4,7 @@ kiwi = require "kiwi"
 p = require "../core/properties"
 BokehView = require "../core/bokeh_view"
 Model = require "../model"
-{ mixin_layoutable, EQ } = require "./layoutable"
+{ mixin_layoutable, EQ, GE, WEAK_EQ } = require "./layoutable"
 
 class BoxView extends BokehView
   className: "bk-box"
@@ -55,11 +55,18 @@ class Box extends Model
     @_box_equal_size_right = new Variable()
 
     # these are passed up to our parent after basing
-    # them on the child box-equal-size vars
+    # them on the child box-cell-align vars
     @_box_cell_align_top = new Variable()
     @_box_cell_align_bottom = new Variable()
     @_box_cell_align_left = new Variable()
     @_box_cell_align_right = new Variable()
+
+    # these are passed up to our parent after basing
+    # them on the child whitespace
+    @_whitespace_top = new Variable()
+    @_whitespace_bottom = new Variable()
+    @_whitespace_left = new Variable()
+    @_whitespace_right = new Variable()
 
   props: ->
     return _.extend {}, super(), {
@@ -93,6 +100,13 @@ class Box extends Model
         else
           [rect[1], rect[3]]
 
+      whitespace = (child) =>
+        vars = child.get_constrained_variables()
+        if @_horizontal
+          [vars['whitespace-left'], vars['whitespace-right']]
+        else
+          [vars['whitespace-top'], vars['whitespace-bottom']]
+
       add_equal_size_constraints = (child, constraints) =>
         # child's "interesting area" (like the plot area) is the
         # same size as the previous child (a child can opt out of
@@ -110,7 +124,7 @@ class Box extends Model
       info = (child) =>
         {
           span: span(child_rect(child))
-          # well, we used to have more in here...
+          whitespace: whitespace(child)
         }
 
       result = []
@@ -135,8 +149,17 @@ class Box extends Model
       for i in [1...children.length]
         next = info(children[i])
         # each child's start equals the previous child's end
-        # (with spacing inserted)
-        result.push(EQ(last.span[0], last.span[1], spacing, [-1, next.span[0]]))
+        result.push(EQ(last.span[0], last.span[1], [-1, next.span[0]]))
+
+        # the whitespace at end of one child + start of next must equal
+        # the box spacing. This must be a weak constraint because it can
+        # conflict with aligning the alignable edges in each child.
+        # Alignment is generally more important visually than spacing.
+        result.push(WEAK_EQ(last.whitespace[1], next.whitespace[0], 0 - spacing))
+        # if we can't satisfy the whitespace being equal to box spacing,
+        # we should fix it (align things) by increasing rather than decreasing
+        # the whitespace.
+        result.push(GE(last.whitespace[1], next.whitespace[0], 0 - spacing))
 
         last = next
 
@@ -162,6 +185,10 @@ class Box extends Model
       result = result.concat(@_box_cell_align_bounds(true)) # horizontal=true
       result = result.concat(@_box_cell_align_bounds(false))
 
+      # build our whitespace from the child ones
+      result = result.concat(@_box_whitespace(true)) # horizontal=true
+      result = result.concat(@_box_whitespace(false))
+
     result
 
   get_constrained_variables: () ->
@@ -176,6 +203,10 @@ class Box extends Model
       'box-cell-align-bottom' : @_box_cell_align_bottom
       'box-cell-align-left' : @_box_cell_align_left
       'box-cell-align-right' : @_box_cell_align_right
+      'whitespace-top' : @_whitespace_top
+      'whitespace-bottom' : @_whitespace_bottom
+      'whitespace-left' : @_whitespace_left
+      'whitespace-right' : @_whitespace_right
     }
 
   get_layoutable_children: () ->
@@ -401,7 +432,7 @@ class Box extends Model
 
     return result
 
-  _box_insets_from_child_insets: (horizontal, child_variable_prefix, our_variable_prefix) ->
+  _box_insets_from_child_insets: (horizontal, child_variable_prefix, our_variable_prefix, at_least) ->
     [start_leaves, end_leaves] = @_find_edge_leaves(horizontal)
 
     if horizontal
@@ -421,7 +452,16 @@ class Box extends Model
       for leaf in leaves
         vars = leaf.get_constrained_variables()
         if name of vars
-          result.push(EQ([-1, ours], vars[name]))
+          if at_least
+            # this is WEAK_EQ not LE because we want to get as
+            # close as possible to equal, rather than taking
+            # anything LE. TODO if we have the right constraints
+            # we shouldn't need to fudge it like this.  I don't
+            # understand yet why plain EQ results in unsatisfiable
+            # constraints in fact.
+            result.push(WEAK_EQ([-1, ours], vars[name]))
+          else
+            result.push(EQ([-1, ours], vars[name]))
       null # prevent coffeescript from making a tmp array
 
     add_constraints(our_start, start_leaves, start_variable)
@@ -430,10 +470,16 @@ class Box extends Model
     return result
 
   _box_equal_size_bounds: (horizontal) ->
-    @_box_insets_from_child_insets(horizontal, 'box-equal-size', '_box_equal_size')
+    # false = box bounds equal all outer child bounds exactly
+    @_box_insets_from_child_insets(horizontal, 'box-equal-size', '_box_equal_size', false)
 
   _box_cell_align_bounds: (horizontal) ->
-    @_box_insets_from_child_insets(horizontal, 'box-cell-align', '_box_cell_align')
+    # false = box bounds equal all outer child bounds exactly
+    @_box_insets_from_child_insets(horizontal, 'box-cell-align', '_box_cell_align', false)
+
+  _box_whitespace: (horizontal) ->
+    # true = box whitespace must be at least the max of child whitespaces
+    @_box_insets_from_child_insets(horizontal, 'whitespace', '_whitespace', true)
 
   set_dom_origin: (left, top) ->
     @set({ dom_left: left, dom_top: top })

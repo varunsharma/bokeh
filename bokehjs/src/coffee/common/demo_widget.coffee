@@ -233,6 +233,12 @@ class DemoWidget extends Model
       'box-equal-size-bottom' : @_height_minus_plot_bottom
       'box-equal-size-left' : @_plot_left
       'box-equal-size-right' : @_width_minus_plot_right
+      # insets from the edge that are whitespace (contain no pixels),
+      # this is used for spacing within a box.
+      'whitespace-top' : @_whitespace_top
+      'whitespace-bottom' : @_whitespace_bottom
+      'whitespace-left' : @_whitespace_left
+      'whitespace-right' : @_whitespace_right
     }
 
   get_layoutable_children: () ->
