@@ -15,7 +15,7 @@ var rootLayoutable = null;
 function refresh() {
   var width = window.innerWidth - 20;
   var height = window.innerHeight - 20;
-  $("#toplevel").width(width).height(height);
+  $("#toplevel").width(width).height(height).css({ top: '10px', left: '10px', position: 'absolute' });
 
   var window_width_var = new kiwi.Variable(width);
   var window_height_var = new kiwi.Variable(height);
