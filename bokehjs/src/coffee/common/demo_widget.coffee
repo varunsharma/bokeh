@@ -147,11 +147,8 @@ class DemoWidget extends Model
     result.push(WEAK_GE(@_plot_bottom_minus_plot_top, - @get('min_plot_height')))
 
     # whitespace is weakly zero because we prefer to expand the
-    # plot not the whitespace. Possible problem: if we discard
-    # these constraints, would we then arbitrarily expand either
-    # the plot or the whitespace?  Not sure how to say "expand
-    # whitespace the minimum to meet constraints, prefer to expand
-    # plot area"
+    # plot not the whitespace. When kiwi can't satisfy a weak
+    # constraint, it still tries to get as close as possible.
     result.push(WEAK_EQ(@_whitespace_left))
     result.push(WEAK_EQ(@_whitespace_right))
     result.push(WEAK_EQ(@_whitespace_top))
