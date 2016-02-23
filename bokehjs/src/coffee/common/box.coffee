@@ -191,21 +191,75 @@ class Box extends Model
     'box-cell-align-bottom'
   ]
 
-  _flatten_cell_edge_variables: (add_path) ->
-    # we build a flat dictionary of variables keyed by strings like these:
-    # "box-cell-align-top"
-    # "box-cell-align-top row-2-0-"
-    # "box-cell-align-top row-1-0-row-2-0-"
+  _flatten_cell_edge_variables: (horizontal) ->
+    # All alignment happens in terms of the
+    # box-cell-align-{left,right,top,bottom} variables. We add
+    # "path" information to variables so we know which ones align,
+    # where the "path" includes the box arity and box cell we went
+    # through.
     #
-    # the trailing stuff is the "path" to the box cell through all
-    # ancestor cells.
+    # If we have a row of three plots, we should align the top and
+    # bottom variables between the three plots.
+    #
+    # The flattened dictionary in this case (for the top and left
+    # only) should be:
+    #
+    #   box-cell-align-top : [ 3 vars ]
+    #   box-cell-align-bottom : [ 3 vars ]
+    #
+    # We don't do left/right starting from a row, and left/right
+    # edges have nothing to align with here.
+    #
+    # Now say we have a row of three columns, each with three
+    # plots (3x3 = 9). We should align the top/bottom variables
+    # across the top three, middle three, and bottom three plots,
+    # as if those groupings were rows. We do this by flattening
+    # starting from the row first, which gets us a dictionary only
+    # of top/bottom variables.
+    #
+    #   box-cell-align-top col-3-0- : [ 3 plots from top of columns ]
+    #   box-cell-align-top col-3-1- : [ 3 plots from middle of columns ]
+    #   box-cell-align-top col-3-2- : [ 3 plots from bottom of columns ]
+    #
+    # "col-3-1-" = 3-cell column, cell index 1.
+    #
+    # In three later, separate calls to
+    # _align_inner_cell_edges_constraints() on each column, we'll
+    # get the left/right variables:
+    #
+    #   box-cell-align-left : [ 3 left-column plots ]
+    #   box-cell-align-left : [ 3 middle-column plots ]
+    #   box-cell-align-left : [ 3 right-column plots ]
+    #
+    # Now add another nesting - we have a row of three columns,
+    # each with three rows, each with three plots. This is
+    # arranged 3x9 = 27.
+    #
+    #   box-cell-align-top col-3-0- : [ 9 plots from top rows of columns ]
+    #   box-cell-align-top col-3-1- : [ 9 plots from middle rows of columns ]
+    #   box-cell-align-top col-3-2- : [ 9 plots from bottom rows of columns ]
+    #
+    # When we make the _align_inner_cell_edges_constraints() calls on each of the three
+    # columns, each column will return row-pathed values
+    #
+    #   box-cell-align-left row-3-0-: [  3 plots in left column of left column ]
+    #   box-cell-align-left row-3-1-: [  3 plots in middle column of left column ]
+    #   box-cell-align-left row-3-2-: [  3 plots in right column of left column ]
+    #   ... same for the middle and right columns
+    #
+    # Anyway in essence what we do is that we add only rows to the
+    # path to left/right variables, and only columns to the path
+    # to top/bottom variables.
+    #
+    # If we nest yet another level we would finally get paths with
+    # multiple rows or multiple columns in them.
 
-    if @_horizontal
-      # if we're a row, pull vertical guides out of our children
-      # so we can match them up with other rows
-      relevant_edges = Box._left_right_inner_cell_edge_variables
-    else
+    if horizontal
       relevant_edges = Box._top_bottom_inner_cell_edge_variables
+    else
+      relevant_edges = Box._left_right_inner_cell_edge_variables
+
+    add_path = horizontal != @_horizontal
 
     children = @get_layoutable_children()
     arity = children.length
@@ -213,7 +267,7 @@ class Box extends Model
     cell = 0
     for child in children
       if child instanceof Box
-        cell_vars = child._flatten_cell_edge_variables(true)
+        cell_vars = child._flatten_cell_edge_variables(horizontal)
       else
         cell_vars = {}
 
@@ -246,8 +300,13 @@ class Box extends Model
       cell = cell + 1
     return flattened
 
+  # TODO right now we call this recursively on every child, but
+  # really it should only be called on the toplevel box (twice,
+  # once with horizontal=true and once with horizontal=false).  We
+  # end up adding identical constraints over and over again by
+  # calling it all the way down the hierarchy.
   _align_inner_cell_edges_constraints: () ->
-    flattened = @_flatten_cell_edge_variables(false)
+    flattened = @_flatten_cell_edge_variables(@_horizontal)
 
     result = []
     for key, variables of flattened
