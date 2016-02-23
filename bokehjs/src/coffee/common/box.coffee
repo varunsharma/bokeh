@@ -432,7 +432,7 @@ class Box extends Model
 
     return result
 
-  _box_insets_from_child_insets: (horizontal, child_variable_prefix, our_variable_prefix, at_least) ->
+  _box_insets_from_child_insets: (horizontal, child_variable_prefix, our_variable_prefix, minimum) ->
     [start_leaves, end_leaves] = @_find_edge_leaves(horizontal)
 
     if horizontal
@@ -452,14 +452,8 @@ class Box extends Model
       for leaf in leaves
         vars = leaf.get_constrained_variables()
         if name of vars
-          if at_least
-            # this is WEAK_EQ not LE because we want to get as
-            # close as possible to equal, rather than taking
-            # anything LE. TODO if we have the right constraints
-            # we shouldn't need to fudge it like this.  I don't
-            # understand yet why plain EQ results in unsatisfiable
-            # constraints in fact.
-            result.push(WEAK_EQ([-1, ours], vars[name]))
+          if minimum
+            result.push(GE([-1, ours], vars[name]))
           else
             result.push(EQ([-1, ours], vars[name]))
       null # prevent coffeescript from making a tmp array
@@ -478,7 +472,9 @@ class Box extends Model
     @_box_insets_from_child_insets(horizontal, 'box-cell-align', '_box_cell_align', false)
 
   _box_whitespace: (horizontal) ->
-    # true = box whitespace must be at least the max of child whitespaces
+    # true = box whitespace must be the minimum of child
+    # whitespaces (i.e. distance from box edge to the outermost
+    # child pixels)
     @_box_insets_from_child_insets(horizontal, 'whitespace', '_whitespace', true)
 
   set_dom_origin: (left, top) ->
