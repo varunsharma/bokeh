@@ -10,6 +10,7 @@ from .formatters import *
 from .glyphs import *
 from .grids import *
 from .layouts import *
+from .layout_components import *
 from .images import *
 from .map_plots import *
 from .markers import *
@@ -23,7 +24,7 @@ from .tiles import *
 from .tools import *
 
 ### Deprecation note:
-### bokeh.models.widgets.layouts was deprecated in 0.11.1 in favor of 
+### bokeh.models.widgets.layouts was deprecated in 0.11.1 in favor of
 ### bokeh.models.layouts and is awaiting removal. The following imports will
 ### load all widgets modules except layouts, in order to prevent raising a
 ### deprecation warning.
