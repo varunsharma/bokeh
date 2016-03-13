@@ -15,23 +15,23 @@ class GridLayoutView extends BokehView
     @render()
 
   render: () ->
-    # obviously this is too simple for real life, where
-    # we have to see if the children list has changed
+    # TODO See if the children list has changed
     if not @_created_child_views
       children = @model.get_layoutable_children()
       for child in children
         if not child.is_dom_layoutable
           throw Error("Child #{child} is not `dom_layoutable`")
-        view = new child.default_view({ model: child })
-        view.render()
-        @$el.append(view.$el)
-        @$el.css({
+        child_view = new child.default_view({ model: child })
+        child_view.render()
+        child_view.$el.css({
           position: 'absolute',
           left: child.get('dom_left'),
           top: child.get('dom_top'),
           width: child._width._value,
           height: child._height._value
         })
+        @$el.append(child_view.$el)
+        
       @_created_child_views = true
 
 class GridLayout extends Model
