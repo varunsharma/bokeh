@@ -58,6 +58,9 @@ module.exports = {
   VBox:                     require '../models/layouts/vbox'
   VBoxForm:                 require '../models/layouts/vboxform'
 
+  Row:                      require '../models/layout_components/row'
+  Column:                  require '../models/layout_components/column'
+
   CategoricalMapper:        require '../models/mappers/categorical_mapper'
   GridMapper:               require '../models/mappers/grid_mapper'
   LinearColorMapper:        require '../models/mappers/linear_color_mapper'
