@@ -16,7 +16,7 @@ UIEvents = require "../../common/ui_events"
 
 BokehView = require "../../core/bokeh_view"
 enums = require "../../core/enums"
-{EQ, GE, Strength} = require "../../core/layout/solver"
+{Variable, EQ, GE, Strength} = require "../../core/layout/solver"
 {logger} = require "../../core/logging"
 p = require "../../core/properties"
 {throttle} = require "../../core/util/throttle"
@@ -622,6 +622,8 @@ class Plot extends Component.Model
   initialize: (attrs, options) ->
     super(attrs, options)
 
+    @setup_dom_layout()
+
     for xr in _.values(@get('extra_x_ranges')).concat(@get('x_range'))
       xr = @resolve_ref(xr)
       plots = xr.get('plots')
@@ -796,6 +798,24 @@ class Plot extends Component.Model
       # internal
       min_size: 120
     }
+
+  # DOM LAYOUT - START
+  setup_dom_layout: ->
+    @_width = new Variable()
+    @_height = new Variable()
+    @is_dom_layoutable = true
+
+  get_constraints: ->
+    []
+
+  get_constrained_values: ->
+    {}
+
+  set_dom_origin: (left, top) ->
+    @set({ dom_left: left, dom_top: top })
+
+  # DOM LAYOUT - END
+
 
 module.exports =
   get_size_for_available_space: get_size_for_available_space
