@@ -20,21 +20,23 @@ class GridLayoutView extends BokehView
     if not @_created_child_views
       children = @model.get_layoutable_children()
       for child in children
+        if not child.is_dom_layoutable
+          throw Error("Child #{child} is not `dom_layoutable`")
         view = new child.default_view({ model: child })
         view.render()
         @$el.append(view.$el)
+        @$el.css({
+          position: 'absolute',
+          left: child.get('dom_left'),
+          top: child.get('dom_top'),
+          width: child._width._value,
+          height: child._height._value
+        })
       @_created_child_views = true
-
-    @$el.css({
-      position: 'absolute',
-      left: @mget('dom_left'),
-      top: @mget('dom_top'),
-      width: @model._width._value,
-      height: @model._height._value
-    })
 
 class GridLayout extends Model
   default_view: GridLayoutView
+  is_dom_layoutable: true
 
   constructor: (attrs, options) ->
     super(attrs, options)
