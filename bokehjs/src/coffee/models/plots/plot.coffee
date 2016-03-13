@@ -535,9 +535,14 @@ class PlotView extends Renderer.View
 
     if not @initial_range_info?
       @set_initial_range()
-
-    # TODO - This should only be on in testing
-    # @$el.find('canvas').attr('data-hash', ctx.hash());
+    
+    @$el.css({
+      position: 'absolute',
+      left: @mget('dom_left'),
+      top: @mget('dom_top'),
+      width: @model._width._value,
+      height: @model._height._value
+    })
 
   resize: () =>
     @resize_width_height(true, false)
@@ -621,8 +626,6 @@ class Plot extends Component.Model
 
   initialize: (attrs, options) ->
     super(attrs, options)
-
-    @setup_dom_layout()
 
     for xr in _.values(@get('extra_x_ranges')).concat(@get('x_range'))
       xr = @resolve_ref(xr)
@@ -799,22 +802,50 @@ class Plot extends Component.Model
       min_size: 120
     }
 
+  #
   # DOM LAYOUT - START
-  setup_dom_layout: ->
+  # 
+  constructor: (attrs, options) ->
+    super(attrs, options)
+    @set('dom_left', 0)
+    @set('dom_top', 0)
     @_width = new Variable()
     @_height = new Variable()
     @is_dom_layoutable = true
 
-  get_constraints: ->
-    []
+  get_constrained_variables: () ->
+    frame = @get('frame')
+    {
+      'width' : @_width
+      'height' : @_height
+      # These are hard-coded, which won't work in the long-term
+      # They are also not used for any display (but should be)
+      'whitespace-top' : 200
+      'whitespace-bottom' : 200
+      'whitespace-left' : 200
+      'whitespace-right' : 200
+      # Get plots left aligning
+      'box-cell-align-left' : frame.panel._left
+    }
 
-  get_constrained_values: ->
-    {}
+  get_constraints: () ->
+    result = []
+    result.push(GE(@_width, - @get('plot_width')))
+    result.push(GE(@_height, - @get('plot_height')))
+    return result
+
+  get_layoutable_children: () ->
+    []
 
   set_dom_origin: (left, top) ->
     @set({ dom_left: left, dom_top: top })
 
+  variables_updated: () ->
+    @trigger('change')
+
+  #
   # DOM LAYOUT - END
+  # 
 
 
 module.exports =

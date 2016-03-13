@@ -13,6 +13,14 @@ class GridLayoutView extends BokehView
     @_created_child_views = false
     @listenTo(@model, 'change', @render)
     @render()
+    @listenTo(@model, 'change', @render)
+
+    @solver = @model.document.solver()
+    constraints = @model.get_constraints()
+    for constraint in constraints
+      @solver.add_constraint(constraint)
+    @solver.update_variables()
+    @model.variables_updated()
 
   render: () ->
     # TODO See if the children list has changed
@@ -23,16 +31,16 @@ class GridLayoutView extends BokehView
           throw Error("Child #{child} is not `dom_layoutable`")
         child_view = new child.default_view({ model: child })
         child_view.render()
-        child_view.$el.css({
-          position: 'absolute',
-          left: child.get('dom_left'),
-          top: child.get('dom_top'),
-          width: child._width._value,
-          height: child._height._value
-        })
         @$el.append(child_view.$el)
-        
       @_created_child_views = true
+
+    @$el.css({
+      position: 'absolute',
+      left: @mget('dom_left'),
+      top: @mget('dom_top'),
+      width: @model._width._value,
+      height: @model._height._value
+    })
 
 class GridLayout extends Model
   default_view: GridLayoutView
@@ -288,9 +296,9 @@ class GridLayout extends Model
     # multiple rows or multiple columns in them.
 
     if horizontal
-      relevant_edges = Box._top_bottom_inner_cell_edge_variables
+      relevant_edges = GridLayout._top_bottom_inner_cell_edge_variables
     else
-      relevant_edges = Box._left_right_inner_cell_edge_variables
+      relevant_edges = GridLayout._left_right_inner_cell_edge_variables
 
     add_path = horizontal != @_horizontal
 
@@ -299,7 +307,7 @@ class GridLayout extends Model
     flattened = {}
     cell = 0
     for child in children
-      if child instanceof Box
+      if child instanceof GridLayout
         cell_vars = child._flatten_cell_edge_variables(horizontal)
       else
         cell_vars = {}
@@ -366,12 +374,12 @@ class GridLayout extends Model
         start = children[0]
         end = children[children.length - 1]
 
-        if start instanceof Box
+        if start instanceof GridLayout
           leaves[0] = leaves[0].concat(start._find_edge_leaves(horizontal)[0])
         else
           leaves[0].push(start)
 
-        if end instanceof Box
+        if end instanceof GridLayout
           leaves[1] = leaves[1].concat(end._find_edge_leaves(horizontal)[1])
         else
           leaves[1].push(end)
@@ -379,7 +387,7 @@ class GridLayout extends Model
         # if we are a column and someone wants the horizontal edges,
         # we return the horizontal edges from all of our children
         for child in children
-          if child instanceof Box
+          if child instanceof GridLayout
             child_leaves = child._find_edge_leaves(horizontal)
             leaves[0] = leaves[0].concat(child_leaves[0])
             leaves[1] = leaves[1].concat(child_leaves[1])
