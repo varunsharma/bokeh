@@ -58,6 +58,6 @@ doc.add_root(column)
 if __name__ == "__main__":
     filename = "row.html"
     with open(filename, "w") as f:
-        .write(file_html(doc, INLINE, "Grid Plot Example"))
+        f.write(file_html(doc, INLINE, "New Grid Example"))
     print("Wrote %s" % filename)
     view(filename)
