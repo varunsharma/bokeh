@@ -840,7 +840,20 @@ class Plot extends Component.Model
       'whitespace-left' : @_whitespace_left
       'whitespace-right' : @_whitespace_right
       # alignment
+      'on-top-edge-align': frame.panel._top
+      'on-right-edge-align': frame.panel._width
+      'on-bottom-edge-align': frame.panel._height
       'on-left-edge-align': frame.panel._left
+
+      'box-cell-align-top' : frame.panel._top
+      'box-cell-align-right' : frame.panel._width
+      'box-cell-align-bottom' : frame.panel._height
+      'box-cell-align-left' : frame.panel._left
+
+      'box-equal-size-top' : frame.panel._top
+      'box-equal-size-right' : frame.panel._width
+      'box-equal-size-bottom' : frame.panel._height
+      'box-equal-size-left' : frame.panel._left
     }
 
   get_constraints: () ->
