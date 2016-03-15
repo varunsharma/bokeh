@@ -708,6 +708,7 @@ class Plot extends Component.Model
       c1 = '_'+cnames[1]
       solver.add_constraint( GE(box['_'+dim], -min_size) )
       solver.add_constraint( EQ(frame.panel[c0], [-1, box[c1]]) )
+      # This constraint gives height and width to plot
       solver.add_constraint( EQ(box[c0], [-1, canvas.panel[c0]]) )
       last = frame
       elts = @get(side)
@@ -716,12 +717,13 @@ class Plot extends Component.Model
           r.set('layout_location', side, { silent: true })
         else
           r.set('layout_location', r.get('location'), { silent: true })
+        # This constraint makes space for axes
         solver.add_constraint( EQ(last.panel[c0], [-1, r.panel[c1]]) )
         last = r
       padding = new LayoutBox.Model()
       padding.attach_document(@document)
-      solver.add_constraint( EQ(last.panel[c0], [-1, padding[c1]]) )
-      solver.add_constraint( EQ(padding[c0], [-1, canvas.panel[c0]]) )
+      #solver.add_constraint( EQ(last.panel[c0], [-1, padding[c1]]) )
+      #solver.add_constraint( EQ(padding[c0], [-1, canvas.panel[c0]]) )
       return box
 
     @_above_panel = do_side(solver, min_border_top, 'above', ['top', 'bottom'], 'height')
