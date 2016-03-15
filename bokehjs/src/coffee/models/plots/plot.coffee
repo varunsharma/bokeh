@@ -850,10 +850,10 @@ class Plot extends Component.Model
       'box-cell-align-bottom' : frame.panel._height
       'box-cell-align-left' : frame.panel._left
 
-      'box-equal-size-top' : frame.panel._top
-      'box-equal-size-right' : frame.panel._width
-      'box-equal-size-bottom' : frame.panel._height
-      'box-equal-size-left' : frame.panel._left
+      #'box-equal-size-top' : frame.panel._top
+      #'box-equal-size-right' : frame.panel._width
+      #'box-equal-size-bottom' : frame.panel._height
+      #'box-equal-size-left' : frame.panel._left
     }
 
   get_constraints: () ->
