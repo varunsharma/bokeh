@@ -834,6 +834,8 @@ class Plot extends Component.Model
       'whitespace-bottom' : @_whitespace_bottom
       'whitespace-left' : @_whitespace_left
       'whitespace-right' : @_whitespace_right
+      # alignment
+      'on-left-edge-align': frame.panel._left
     }
 
   get_constraints: () ->

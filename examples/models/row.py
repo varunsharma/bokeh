@@ -52,7 +52,7 @@ row2 = Row(children=[plot3, plot4])
 column = Column(children=[row1, row2])
 
 doc = Document()
-doc.add_root(row1)
+doc.add_root(column)
 
 if __name__ == "__main__":
     filename = "row.html"
