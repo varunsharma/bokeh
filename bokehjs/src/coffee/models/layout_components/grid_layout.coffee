@@ -36,12 +36,12 @@ class GridLayoutView extends BokehView
 
 class GridLayout extends Model
   default_view: GridLayoutView
-  is_dom_layoutable: true
 
   constructor: (attrs, options) ->
     super(attrs, options)
     @set('dom_left', 0)
     @set('dom_top', 0)
+    @is_dom_layoutable = true
     @_width = new Variable()
     @_height = new Variable()
     # for children that want to be the same size
@@ -77,11 +77,11 @@ class GridLayout extends Model
     }
 
   _ensure_origin_variables: (child) ->
-    if '__Box_x' not of child
-      child['__Box_x'] = new Variable('child_origin_x')
-    if '__Box_y' not of child
-      child['__Box_y'] = new Variable('child_origin_y')
-    return [child['__Box_x'], child['__Box_y']]
+    if '__GridLayout_x' not of child
+      child['__GridLayout_x'] = new Variable('child_origin_x')
+    if '__GridLayout_y' not of child
+      child['__GridLayout_y'] = new Variable('child_origin_y')
+    return [child['__GridLayout_x'], child['__GridLayout_y']]
 
   get_constraints: () ->
     children = @get_layoutable_children()

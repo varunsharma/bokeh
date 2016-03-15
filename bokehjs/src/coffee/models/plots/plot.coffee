@@ -576,6 +576,11 @@ class PlotView extends Renderer.View
     avail_height = @.el.parentNode.clientHeight - 75  # -50 for x ticks
     min_size = @mget('min_size')
 
+    for r in @mget('renderers')
+      if r.get('glyph')?
+        console.log('plot resize: ' + r.get('glyph').get('line_color').value + ' ' + avail_width + ' ' + avail_height)
+    
+
     if maintain_ar is false
       # Just change width and/or height; aspect ratio will change
       if use_width and use_height
