@@ -16,7 +16,7 @@ UIEvents = require "../../common/ui_events"
 
 BokehView = require "../../core/bokeh_view"
 enums = require "../../core/enums"
-{Variable, EQ, GE, Strength} = require "../../core/layout/solver"
+{EQ, GE, Strength, Variable, WEAK_EQ, WEAK_GE} = require "../../core/layout/solver"
 {logger} = require "../../core/logging"
 p = require "../../core/properties"
 {throttle} = require "../../core/util/throttle"
@@ -794,6 +794,8 @@ class Plot extends Component.Model
       min_border_left:   [ p.Number,   MIN_BORDER             ]
       min_border_bottom: [ p.Number,   MIN_BORDER             ]
       min_border_right:  [ p.Number,   MIN_BORDER             ]
+      min_plot_width: [p.Number, 40]
+      min_plot_height: [p.Number, 40]
     }
 
   defaults: ->
@@ -824,6 +826,19 @@ class Plot extends Component.Model
     @_whitespace_right = new Variable()
     @_whitespace_top = new Variable()
     @_whitespace_bottom = new Variable()
+    #@_plot_left = new Variable()
+    #@_plot_right = new Variable()
+    #@_plot_top = new Variable()
+    #@_plot_bottom = new Variable()
+    ## this is the DISTANCE FROM THE SIDE of the right and bottom,
+    ## since that isn't the same as the coordinate
+    #@_width_minus_plot_right = new Variable()
+    #@_height_minus_plot_bottom = new Variable()
+    ## these are the plot width and height, but written
+    ## as a function of the coordinates because we compute
+    ## them that way
+    #@_plot_right_minus_plot_left = new Variable()
+    #@_plot_bottom_minus_plot_top = new Variable()
 
   get_constrained_variables: () ->
     frame = @get('frame')
@@ -853,6 +868,16 @@ class Plot extends Component.Model
       'box-cell-align-bottom' : frame.panel._height
       'box-cell-align-left' : frame.panel._left
 
+      #'on-top-edge-align': @_plot_top
+      #'on-right-edge-align':  @_width_minus_plot_right
+      #'on-bottom-edge-align':  @_height_minus_plot_bottom
+      #'on-left-edge-align': @_plot_left
+
+      #'box-cell-align-top' : @_plot_top
+      #'box-cell-align-right' :  @_width_minus_plot_right
+      #'box-cell-align-bottom' :  @_height_minus_plot_bottom
+      #'box-cell-align-left' : @_plot_left
+
       #'box-equal-size-top' : frame.panel._top
       #'box-equal-size-right' : frame.panel._width
       #'box-equal-size-bottom' : frame.panel._height
@@ -861,8 +886,18 @@ class Plot extends Component.Model
 
   get_constraints: () ->
     result = []
+    frame = @get('frame')
+
+
     result.push(GE(@_width, - @get('canvas')._width._value))
     result.push(GE(@_height, - @get('canvas')._height._value))
+
+    #result.push(GE(@_plot_left, - @get('frame')._left._value))
+    #result.push(GE(@_plot_top, - @get('frame')._top._value))
+    #result.push(GE(@_plot_bottom, - @get('frame')._bottom._value))
+    #result.push(GE(@_plot_right, - @get('frame')._right._value))
+    #result.push(EQ(@_height_minus_plot_bottom, [-1, @_height], @_plot_bottom))
+    #result.push(EQ(@_width_minus_plot_right, [-1, @_width], @_plot_right))
     return result
 
   get_layoutable_children: () ->
