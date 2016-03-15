@@ -542,11 +542,16 @@ class PlotView extends Renderer.View
       left: @mget('dom_left'),
       top: @mget('dom_top'),
       width: @model._width._value,
-      height: @model._height._value
+      height: @model._height._value,
+      'margin-top': @model._whitespace_top._value,
+      'margin-right': @model._whitespace_right._value,
+      'margin-bottom': @model._whitespace_bottom._value,
+      'margin-left': @model._whitespace_left._value,
+      color: 'purple'
     })
 
   resize: () =>
-    @resize_width_height(true, false)
+    @resize_width_height(true, true, false)
 
   resize_width_height: (use_width, use_height, maintain_ar=true) =>
     # Resize plot based on available width and/or height
@@ -568,7 +573,7 @@ class PlotView extends Renderer.View
       return
 
     avail_width = @.el.clientWidth
-    avail_height = @.el.parentNode.clientHeight - 50  # -50 for x ticks
+    avail_height = @.el.parentNode.clientHeight - 75  # -50 for x ticks
     min_size = @mget('min_size')
 
     if maintain_ar is false
@@ -813,26 +818,28 @@ class Plot extends Component.Model
     @_width = new Variable()
     @_height = new Variable()
     @is_dom_layoutable = true
+    @_whitespace_left = new Variable()
+    @_whitespace_right = new Variable()
+    @_whitespace_top = new Variable()
+    @_whitespace_bottom = new Variable()
 
   get_constrained_variables: () ->
     frame = @get('frame')
     {
       'width' : @_width
       'height' : @_height
-      # These are hard-coded, which won't work in the long-term
-      # They are also not used for any display (but should be)
-      'whitespace-top' : 200
-      'whitespace-bottom' : 200
-      'whitespace-left' : 200
-      'whitespace-right' : 200
-      # Get plots left aligning
-      'box-cell-align-left' : frame.panel._left
+      # insets from the edge that are whitespace (contain no pixels),
+      # this is used for spacing within a box.
+      'whitespace-top' : @_whitespace_top
+      'whitespace-bottom' : @_whitespace_bottom
+      'whitespace-left' : @_whitespace_left
+      'whitespace-right' : @_whitespace_right
     }
 
   get_constraints: () ->
     result = []
-    result.push(GE(@_width, - @get('plot_width')))
-    result.push(GE(@_height, - @get('plot_height')))
+    result.push(GE(@_width, - @get('canvas')._width._value))
+    result.push(GE(@_height, - @get('canvas')._height._value))
     return result
 
   get_layoutable_children: () ->

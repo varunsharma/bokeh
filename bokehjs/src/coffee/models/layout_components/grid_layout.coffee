@@ -13,14 +13,6 @@ class GridLayoutView extends BokehView
     @_created_child_views = false
     @listenTo(@model, 'change', @render)
     @render()
-    @listenTo(@model, 'change', @render)
-
-    @solver = @model.document.solver()
-    constraints = @model.get_constraints()
-    for constraint in constraints
-      @solver.add_constraint(constraint)
-    @solver.update_variables()
-    @model.variables_updated()
 
   render: () ->
     # TODO See if the children list has changed

@@ -43,6 +43,7 @@ def make_plot(source, xname, yname, line_color, plot_width=200, plot_height=300,
 
 plot1 = make_plot(source, "x", "y1", "blue", plot_width=400, plot_height=300)
 plot2 = make_plot(source, "x", "y2", "red", plot_width=200, plot_height=150, title="Plot2")
+assert plot2.responsive == True
 plot3 = make_plot(source, "x", "y3", "green", left_axis=False, plot_height=100)
 plot4 = make_plot(source, "x", "y4", "pink", left_axis=False, title="Plot4")
 
@@ -51,7 +52,7 @@ row2 = Row(children=[plot3, plot4])
 column = Column(children=[row1, row2])
 
 doc = Document()
-doc.add_root(column)
+doc.add_root(row1)
 
 if __name__ == "__main__":
     filename = "row.html"
