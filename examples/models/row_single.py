@@ -26,7 +26,7 @@ source = ColumnDataSource(
 )
 
 
-def make_plot(source, xname, yname, line_color, plot_width=200, plot_height=300, left_axis=True, title=None):
+def make_plot(source, xname, yname, line_color, plot_width=200, plot_height=300, left_axis=True, title=None, right_axis=False):
     xdr = DataRange1d()
     ydr = DataRange1d()
     plot = Plot(
@@ -37,6 +37,8 @@ def make_plot(source, xname, yname, line_color, plot_width=200, plot_height=300,
     plot.add_layout(LinearAxis(), 'below')
     if left_axis:
         plot.add_layout(LinearAxis(), 'left')
+    if right_axis:
+        plot.add_layout(LinearAxis(), 'right')
     plot.add_glyph(source, Line(x=xname, y=yname, line_color=line_color))
     plot.add_tools(PanTool(), WheelZoomTool(), ResizeTool())
     return plot
@@ -44,7 +46,7 @@ def make_plot(source, xname, yname, line_color, plot_width=200, plot_height=300,
 plot1 = make_plot(source, "x", "y1", "blue", plot_width=400, plot_height=300)
 plot2 = make_plot(source, "x", "y2", "red", plot_width=200, plot_height=150, title="Plot2")
 plot3 = make_plot(source, "x", "y3", "green", left_axis=False, plot_height=100)
-plot4 = make_plot(source, "x", "y4", "pink", left_axis=False, title="Plot4")
+plot4 = make_plot(source, "x", "y4", "pink", left_axis=False, right_axis=True, title="Plot4")
 
 #row1 = Row(children=[plot1])
 #row2 = Row(children=[plot3, plot4])
