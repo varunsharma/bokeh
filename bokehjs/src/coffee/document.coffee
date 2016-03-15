@@ -1,7 +1,8 @@
 _ = require "underscore"
+$ = require "jquery"
 
 {Collections} = require "./base"
-{Solver} = require "./core/layout/solver"
+{Variable, Solver, EQ} = require "./core/layout/solver"
 {logger} = require "./core/logging"
 HasProps = require "./core/has_props"
 {is_ref} = require "./core/util/refs"
@@ -83,6 +84,20 @@ class Document
     @_all_model_counts = {}
     @_callbacks = []
     @_solver = new Solver()
+    @_doc_width = new Variable()
+    @_doc_height = new Variable()
+    @_solver.add_edit_variable(@_doc_width)
+    @_solver.add_edit_variable(@_doc_height)
+    $(window).on("resize", $.proxy(@resize, @))
+    @resize()
+
+  resize: () ->
+    console.log("calling resize")
+    width = window.innerWidth - 20
+    height = window.innerHeight - 20
+    @_solver.suggest_value(@_doc_width, width)
+    @_solver.suggest_value(@_doc_height, height)
+    @_solver.update_variables()
 
   solver: () ->
     @_solver
@@ -108,6 +123,18 @@ class Document
       return
     @_roots.push(model)
     model.attach_document(@)
+    root_constraints = model.get_constraints()
+    for constraint in root_constraints
+      @_solver.add_constraint(constraint)
+    root_constrained_variables = model.get_constrained_variables()
+    root_width = root_constrained_variables['width']
+    root_height = root_constrained_variables['height']
+    # This passes the constraint down from the document to the root
+    @_solver.add_constraint(EQ(root_width, [-1, @_doc_width]))
+    @_solver.add_constraint(EQ(root_height, [-1, @_doc_height]))
+    @_solver.update_variables()
+    model.variables_updated()
+
     @_trigger_on_change(new RootAddedEvent(@, model))
 
   remove_root : (model) ->

@@ -8,7 +8,7 @@ from bokeh.embed import file_html
 from bokeh.models.glyphs import Line
 from bokeh.models import (
     Plot, DataRange1d, LinearAxis, ColumnDataSource,
-    PanTool, WheelZoomTool, ResizeTool, Row, Column
+    PanTool, WheelZoomTool, ResizeTool, # Row, Column
 )
 
 from bokeh.resources import INLINE
@@ -46,16 +46,16 @@ plot2 = make_plot(source, "x", "y2", "red", plot_width=200, plot_height=150, tit
 plot3 = make_plot(source, "x", "y3", "green", left_axis=False, plot_height=100)
 plot4 = make_plot(source, "x", "y4", "pink", left_axis=False, title="Plot4")
 
-row1 = Row(children=[plot1, plot2])
-row2 = Row(children=[plot3, plot4])
-column = Column(children=[row1, row2])
+#row1 = Row(children=[plot1])
+#row2 = Row(children=[plot3, plot4])
+#column = Column(children=[row1])
 
 doc = Document()
-doc.add_root(column)
+doc.add_root(plot1)
 
 if __name__ == "__main__":
-    filename = "row.html"
+    filename = "row_single.html"
     with open(filename, "w") as f:
-        f.write(file_html(doc, INLINE, "New Grid Example"))
+        f.write(file_html(doc, INLINE, "Row - Single Plot - Example"))
     print("Wrote %s" % filename)
     view(filename)
