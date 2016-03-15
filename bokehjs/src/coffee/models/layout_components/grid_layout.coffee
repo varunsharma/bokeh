@@ -485,6 +485,7 @@ class GridLayout extends Model
   variables_updated: () ->
     for child in @get_layoutable_children()
       [left, top] = @_ensure_origin_variables(child)
+      console.log("setting dom origin #{left._value} #{top._value}")
       child.set_dom_origin(left._value, top._value)
       child.variables_updated()
 

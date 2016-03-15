@@ -92,12 +92,16 @@ class Document
     @resize()
 
   resize: () ->
+    # This isn't having the desired effect of propogating down to child elements
     console.log("calling resize")
     width = window.innerWidth - 20
     height = window.innerHeight - 20
     @_solver.suggest_value(@_doc_width, width)
     @_solver.suggest_value(@_doc_height, height)
     @_solver.update_variables()
+    for root in @_roots
+      if root.variables_updated?
+        root.variables_updated()
 
   solver: () ->
     @_solver

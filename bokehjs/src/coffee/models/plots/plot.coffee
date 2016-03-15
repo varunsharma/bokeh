@@ -537,16 +537,13 @@ class PlotView extends Renderer.View
     if not @initial_range_info?
       @set_initial_range()
     
+    console.log('setting the css')
     @$el.css({
       position: 'absolute',
       left: @mget('dom_left'),
       top: @mget('dom_top'),
       width: @model._width._value,
       height: @model._height._value,
-      'margin-top': @model._whitespace_top._value,
-      'margin-right': @model._whitespace_right._value,
-      'margin-bottom': @model._whitespace_bottom._value,
-      'margin-left': @model._whitespace_left._value,
       color: 'purple'
     })
 
@@ -830,6 +827,11 @@ class Plot extends Component.Model
 
   get_constrained_variables: () ->
     frame = @get('frame')
+    canvas = @get('canvas')
+    for r in @get('renderers')
+      if r.get('glyph')?
+        console.log('frame: ' + r.get('glyph').get('line_color').value + ' ' + frame._top._value + ' ' + frame._width._value + ' ' + frame._height._value + ' ' + frame._left._value )
+        console.log('canvas: ' + r.get('glyph').get('line_color').value + ' ' + canvas._top._value + ' ' + canvas._width._value + ' ' + canvas._height._value + ' ' + canvas._left._value )
     {
       'width' : @_width
       'height' : @_height
@@ -839,7 +841,8 @@ class Plot extends Component.Model
       'whitespace-bottom' : @_whitespace_bottom
       'whitespace-left' : @_whitespace_left
       'whitespace-right' : @_whitespace_right
-      # alignment
+
+      # alignment - was hoping this would leave matching room for titles
       'on-top-edge-align': frame.panel._top
       'on-right-edge-align': frame.panel._width
       'on-bottom-edge-align': frame.panel._height
